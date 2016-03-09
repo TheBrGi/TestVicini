@@ -2,7 +2,10 @@ package com.prog.tlc.btexchange;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -67,10 +70,24 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void load() {
-        dispositivi = btAdapter.getBondedDevices();
-        adapter.clear();
-        for (BluetoothDevice bt : dispositivi)
-            adapter.add(bt.getName());
+        btAdapter.startDiscovery();
+        // Create a BroadcastReceiver for ACTION_FOUND
+        final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                // When discovery finds a device
+                if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                    // Get the BluetoothDevice object from the Intent
+                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                    // Add the name and address to an array adapter to show in a ListView
+                    adapter.add(device.getName() + "\n" + device.getAddress());
+                }
+            }
+        };
+// Register the BroadcastReceiver
+        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        registerReceiver(mReceiver, filter); // Don't forget to unregister during onDestroy
+
     }
 
     @Override
