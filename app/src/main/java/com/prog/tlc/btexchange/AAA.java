@@ -5,6 +5,6 @@ package com.prog.tlc.btexchange;
  */
 public class AAA {
     public static void main(String[]args) {
-        System.out.print("AAA");
+        System.out.print("AAAEEE");
     }
 }
