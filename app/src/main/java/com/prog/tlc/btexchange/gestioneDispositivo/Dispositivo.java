@@ -16,7 +16,7 @@ public class Dispositivo {
         sequenceNumber = 1;
         listaNodi = new LinkedList<>();
         tabellaDiRouting = new LinkedList<>();
-        //TODO MACAddress = metodo statico del package bluetooth
+        /* TODO MACAddress = metodo statico del package bluetooth */
     }
 
     public void incrementaSeqNum() { sequenceNumber++; }
