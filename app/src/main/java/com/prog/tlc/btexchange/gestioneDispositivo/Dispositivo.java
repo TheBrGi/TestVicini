@@ -6,7 +6,7 @@ import java.util.LinkedList;
  * Created by Domenico on 10/03/2016.
  */
 public class Dispositivo {
-    private LinkedList<n> listaNodi;
+    private LinkedList<Device> listaNodi;
     private LinkedList<Percorso> tabellaDiRouting;
     private int sequenceNumber;
     private String nome, MACAddress;
@@ -21,7 +21,7 @@ public class Dispositivo {
 
     public void incrementaSeqNum() { sequenceNumber++; }
 
-    public void aggiungiNodo(n n) {
+    public void aggiungiNodo(Device n) {
         listaNodi.addFirst(n);
     }
 

@@ -4,20 +4,20 @@ package com.prog.tlc.btexchange.gestioneDispositivo;
  * Created by Domenico on 10/03/2016.
  */
 public class Percorso {
-    private n destinazione, nextHop;
+    private Device destinazione, nextHop;
     private int numeroHop;
 
-    public Percorso(n dest, n nextH, int nHop){
+    public Percorso(Device dest, Device nextH, int nHop){
         destinazione = dest;
         nextHop = nextH;
         numeroHop = nHop;
     }
 
-    public n getDestinazione() {
+    public Device getDestinazione() {
         return destinazione;
     }
 
-    public n getNextHop() {
+    public Device getNextHop() {
         return nextHop;
     }
 

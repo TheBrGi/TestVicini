@@ -3,12 +3,12 @@ package com.prog.tlc.btexchange.gestioneDispositivo;
 /**
  * Created by Domenico on 10/03/2016.
  */
-public class n {
+public class Device {
     private String nome, MACAddress;
     private int sequenceNumber;
     private boolean vicino;
 
-    public n(String n,String MAC, int sq, boolean v) {
+    public Device(String n,String MAC, int sq, boolean v) {
         nome = n;
         MACAddress = MAC;
         sequenceNumber = sq;
@@ -39,4 +39,3 @@ public class n {
         this.vicino = vicino;
     }
 }
-
