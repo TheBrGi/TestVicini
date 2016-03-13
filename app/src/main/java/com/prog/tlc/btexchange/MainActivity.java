@@ -30,6 +30,19 @@ public class MainActivity extends AppCompatActivity
     private ListView lv;
     private ArrayAdapter<String> adapter = null;
     private static final int BLUETOOTH_ON = 1000;
+    // Create a BroadcastReceiver for ACTION_FOUND
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            // When discovery finds a device
+            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                // Get the BluetoothDevice object from the Intent
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                // Add the name and address to an array adapter to show in a ListView
+                adapter.add(device.getName() + "\n" + device.getAddress());
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,28 +78,22 @@ public class MainActivity extends AppCompatActivity
         if (!btAdapter.isEnabled()) {
             Intent turnOn = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(turnOn, BLUETOOTH_ON);
+            Intent discoverableIntent = new
+                    Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+            discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 0);
+            startActivity(discoverableIntent);
         } else
             load();
     }
 
     private void load() {
-        btAdapter.startDiscovery();
-        // Create a BroadcastReceiver for ACTION_FOUND
-        final BroadcastReceiver mReceiver = new BroadcastReceiver() {
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                // When discovery finds a device
-                if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-                    // Get the BluetoothDevice object from the Intent
-                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                    // Add the name and address to an array adapter to show in a ListView
-                    adapter.add(device.getName() + "\n" + device.getAddress());
-                }
-            }
-        };
+        if (mReceiver.isOrderedBroadcast()) unregisterReceiver(mReceiver);
+        btAdapter.cancelDiscovery();
+        adapter.clear();
         // Register the BroadcastReceiver
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         registerReceiver(mReceiver, filter); // Don't forget to unregister during onDestroy
+        btAdapter.startDiscovery();
     }
 
     @Override
