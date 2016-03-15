@@ -33,7 +33,7 @@ public class Dispositivo {
     public void rimuoviNodo(Node n) { listaNodi.remove(n); }
 
     public void aggiungiPercorso(Percorso p) {
-        String destinazione = p.getDestinazione().getMACAddress();
+        String destinazione = p.getDestinazione();
         tabellaDiRouting.put(destinazione, p);
     }
 
