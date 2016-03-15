@@ -30,6 +30,8 @@ public class Dispositivo {
         listaNodi.addFirst(n);
     }
 
+    public void rimuoviNodo(Node n) { listaNodi.remove(n); }
+
     public void aggiungiPercorso(Percorso p) {
         String destinazione = p.getDestinazione().getMACAddress();
         tabellaDiRouting.put(destinazione, p);
