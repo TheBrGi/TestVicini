@@ -5,28 +5,18 @@ package com.prog.tlc.btexchange.gestioneDispositivo;
  */
 public class Node {
     private String nome, MACAddress;
-    private boolean vicino;
 
 
-    public Node(String n, String MAC, int sq, boolean v) {
+    public Node(String n, String MAC) {
         nome = n;
         MACAddress = MAC;
-        vicino = v;
     }
 
     public String getMACAddress() {
         return MACAddress;
     }
-
-    public boolean vicino() {
-        return vicino;
-    }
-
     public String getNome() {
         return nome;
     }
 
-    public void setVicino(boolean vicino) {
-        this.vicino = vicino;
-    }
 }

@@ -16,10 +16,31 @@ public class Dispositivo {
 
     public Dispositivo(String n) {
         nome = n;
-        String MACAddress = BluetoothAdapter.getDefaultAdapter().getAddress();
+        String MACAddress = BluetoothAdapter.getDefaultAdapter().getAddress(); //TODO funzionalità
         int sequenceNumber = 1;
         listaNodi = new LinkedList<>();
+        listaNodi.addFirst(new Node(n,MACAddress));
         tabellaDiRouting = new HashMap<>();
+    }
+
+    public LinkedList<Node> getListaNodi() {
+        return listaNodi;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public HashMap<String, Percorso> getTabellaDiRouting() {
+        return tabellaDiRouting;
+    }
+
+    public String getMACAddress() {
+        return MACAddress;
+    }
+
+    public int getSequenceNumber() {
+        return sequenceNumber;
     }
 
     public void incrementaSeqNum() {
