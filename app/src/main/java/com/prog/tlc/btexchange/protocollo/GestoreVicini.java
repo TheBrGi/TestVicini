@@ -45,10 +45,20 @@ public class GestoreVicini extends Thread {
         public void run() {
             while (true) {
                 LinkedList<Node> nuoveInfo = BtUtil.riceviGreeting().getNodiNoti();
-                // TODO mergeNodi(nuoveInfo); non devono esserci duplicati
+                mergeNodi(nuoveInfo); /*fondende gli elementi della lista
+                                        myDisp insieme ai nodi della lista nuoveInfo*/
             }
         }
 
         //TODO private void mergeNodi(LinkedList<Nodi> l) non devono esserci duplicati, nella lista di myDisp
+        //nuove info 4e myDisp.getNodi()
+
+        private void mergeNodi(LinkedList <Node> nuoveInfo){
+            for (Node n : nuoveInfo){
+                    if(!(myDisp.getListaNodi().contains(n)))
+                        myDisp.aggiungiNodo(n);
+                }
+        }
+
     }
 }

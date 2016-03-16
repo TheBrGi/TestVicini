@@ -19,4 +19,13 @@ public class Node {
         return nome;
     }
 
+    @Override
+    public boolean equals(Object o){
+        if(!(o instanceof Node))
+            return false;
+        Node n=(Node)o;
+        if(this.nome.equals(n.getNome()) && this.MACAddress.equals(n.getMACAddress()))
+            return true;
+        return false;
+    }//equals
 }
