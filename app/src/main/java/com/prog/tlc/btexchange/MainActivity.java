@@ -29,7 +29,6 @@ import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
-    public static final UUID myUUID = UUID.fromString("d7a628a4-e911-11e5-9ce9-5e5517507c66");
     private BluetoothAdapter btAdapter;
     private Set<BluetoothDevice> dispositivi;
 

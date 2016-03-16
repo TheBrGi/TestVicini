@@ -12,12 +12,15 @@ import com.prog.tlc.btexchange.gestioneDispositivo.Node;
 import com.prog.tlc.btexchange.protocollo.NeighborGreeting;
 
 import java.util.LinkedList;
+import java.util.UUID;
 
 /**
  * Created by BrGi on 16/03/2016.
  */
 public class BtUtil {
+    public static final UUID myUUID = UUID.fromString("d7a628a4-e911-11e5-9ce9-5e5517507c66");
     private final static long ATTESA = 10000;
+    public static final String GREETING = "greeting";
 
     private BtUtil() {
     }
@@ -60,25 +63,30 @@ public class BtUtil {
     }
 
     public static void inviaGreeting(NeighborGreeting greet, Node vicino) {
-        BluetoothAdapter btAdapter=getBtAdapter();
-        BluetoothDevice btDevice=btAdapter.getRemoteDevice(vicino.getMACAddress());
-        ConnectThread connect=new ConnectThread(btAdapter,btDevice,greet);
+        BluetoothAdapter btAdapter = getBtAdapter();
+        BluetoothDevice btDevice = btAdapter.getRemoteDevice(vicino.getMACAddress());
+        ConnectThread connect = new ConnectThread(btAdapter, btDevice, greet);
         connect.start();
     }
 
-    public static NeighborGreeting riceviGreeting(){
-        BluetoothAdapter btAdapter=getBtAdapter();
-        Object obj=null;
-        AcceptThread accept=new AcceptThread(btAdapter,obj);
-        accept.start();
-        try {
-            accept.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+    public static NeighborGreeting riceviGreeting() {
+        BluetoothAdapter btAdapter = getBtAdapter();
+        Object obj = null;
+        NeighborGreeting ng = null;
+        while (true) {
+            AcceptThread accept = new AcceptThread(btAdapter, obj, GREETING);
+            accept.start();
+            try {
+                accept.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            if (obj instanceof NeighborGreeting) {
+                ng = (NeighborGreeting) obj;
+                break;
+            }
         }
-        NeighborGreeting ng=null;
-        if(obj instanceof NeighborGreeting)
-            ng=(NeighborGreeting)obj;
         return ng;
     }
 }
