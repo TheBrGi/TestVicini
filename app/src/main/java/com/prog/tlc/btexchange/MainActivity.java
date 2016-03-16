@@ -18,15 +18,25 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.Set;
+import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
+    public static final UUID myUUID = UUID.fromString("d7a628a4-e911-11e5-9ce9-5e5517507c66");
     private BluetoothAdapter btAdapter;
     private Set<BluetoothDevice> dispositivi;
+
+    public BluetoothAdapter getBtAdapter() {
+        return btAdapter;
+    }
+
     private ListView lv;
     private ArrayAdapter<String> adapter = null;
     private static final int BLUETOOTH_ON = 1000;
@@ -72,6 +82,15 @@ public class MainActivity extends AppCompatActivity
         lv = (ListView) findViewById(R.id.listview);
         adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1);
         lv.setAdapter(adapter);
+        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                TextView text = (TextView) view;
+                String s = text.getText().toString();
+                Toast t=Toast.makeText(getApplicationContext(),s,Toast.LENGTH_SHORT);
+                t.show();
+            }
+        });
     }
 
     public void scan(View v) {
