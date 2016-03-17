@@ -7,10 +7,11 @@ public class Percorso {
     private String destinazione, nextHop; //MACaddress di destinazione e nexthop
     private int numeroHop,sequenceNumber;
 
-    public Percorso(String dest, String nextH, int nHop){
+    public Percorso(String dest, String nextH, int nHop,int sequenceNumber){
         destinazione = dest;
         nextHop = nextH;
         numeroHop = nHop;
+        this.sequenceNumber = sequenceNumber;
     }
     public int getSequenceNumber() {
         return sequenceNumber;

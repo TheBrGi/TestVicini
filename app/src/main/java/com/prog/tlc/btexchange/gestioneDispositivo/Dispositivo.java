@@ -1,6 +1,7 @@
 package com.prog.tlc.btexchange.gestioneDispositivo;
 
-import android.bluetooth.BluetoothAdapter;
+import com.prog.tlc.btexchange.gestione_bluetooth.BtUtil;
+import com.prog.tlc.btexchange.protocollo.RouteRequest;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -11,16 +12,19 @@ import java.util.LinkedList;
 public class Dispositivo {
     private LinkedList<Node> listaNodi;
     private HashMap<String, Percorso> tabellaDiRouting;
+    private HashMap<String,Integer> RREQRicevuti;
     private String nome, MACAddress;
     private int sequenceNumber;//si incrementa dopo l'avvio di una route discovery o di una reply
 
+
     public Dispositivo(String n) {
         nome = n;
-        String MACAddress = BluetoothAdapter.getDefaultAdapter().getAddress(); //TODO funzionalità
+        String MACAddress = BtUtil.getMACMioDispositivo();
         int sequenceNumber = 1;
         listaNodi = new LinkedList<>();
         listaNodi.addFirst(new Node(n,MACAddress));
         tabellaDiRouting = new HashMap<>();
+        RREQRicevuti = new HashMap<>();
     }
 
     public LinkedList<Node> getListaNodi() {
@@ -66,6 +70,14 @@ public class Dispositivo {
         if (esistePercorso(destinazione))
             return tabellaDiRouting.get(destinazione);
         return null;
+    }
+
+    public HashMap<String, Integer> getRREQRicevuti() {
+        return RREQRicevuti;
+    }
+
+    public void aggiungiRREQ(RouteRequest rr) {
+        RREQRicevuti.put(rr.getSource_addr(),rr.getSource_sequence_number());
     }
 
 

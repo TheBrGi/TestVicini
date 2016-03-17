@@ -89,4 +89,6 @@ public class BtUtil {
         }
         return ng;
     }
+
+    public static String getMACMioDispositivo() { return BluetoothAdapter.getDefaultAdapter().getAddress(); }
 }

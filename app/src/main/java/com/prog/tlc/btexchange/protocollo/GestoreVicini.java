@@ -26,6 +26,10 @@ public class GestoreVicini extends Thread {
         new Ascoltatore().start();
     }
 
+    public LinkedList<Node> getVicini() {
+        return vicini;
+    }
+
     public void run() { //invia greetings ai vicini (temporizzato)
         while (true) {
             vicini = BtUtil.cercaVicini();
