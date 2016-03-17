@@ -50,9 +50,6 @@ public class GestoreVicini extends Thread {
             }
         }
 
-        //TODO private void mergeNodi(LinkedList<Nodi> l) non devono esserci duplicati, nella lista di myDisp
-        //nuove info 4e myDisp.getNodi()
-
         private void mergeNodi(LinkedList <Node> nuoveInfo){
             for (Node n : nuoveInfo){
                     if(!(myDisp.getListaNodi().contains(n)))

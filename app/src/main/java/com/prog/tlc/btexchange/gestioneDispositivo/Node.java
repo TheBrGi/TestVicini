@@ -6,7 +6,6 @@ package com.prog.tlc.btexchange.gestioneDispositivo;
 public class Node {
     private String nome, MACAddress;
 
-
     public Node(String n, String MAC) {
         nome = n;
         MACAddress = MAC;

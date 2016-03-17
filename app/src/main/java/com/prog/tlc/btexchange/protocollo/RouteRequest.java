@@ -7,9 +7,11 @@ import java.io.Serializable;
  */
 public class RouteRequest implements Serializable{
     private String source_addr;
-    private int source_sequence_number;
+    private int source_sequence_number; //identifica univocamente questo messaggio RREQ
     private String dest_addr;
-    private int dest_sequence_number;
+    private int dest_sequence_number; /*The latest sequence number received in the past
+                                        by the originator for any route towards the
+                                        destination.*/
     private int hop_cnt;
 
     public RouteRequest(String source_addr, int source_sequence_number, String dest_addr, int dest_sequence_number, int hop_cnt) {
@@ -39,4 +41,6 @@ public class RouteRequest implements Serializable{
     public int getHop_cnt() {
         return hop_cnt;
     }
+
+    public void incrementaHop_cnt() { hop_cnt++; }
 }

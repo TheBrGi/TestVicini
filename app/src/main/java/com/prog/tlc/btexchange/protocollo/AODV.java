@@ -25,6 +25,7 @@ public class AODV {
         public void run() {
             while(true) {
                 //TODO RouteRequest rr = ascoltaRichiesta(); metodo statico del bt
+
             }
         }
     }
