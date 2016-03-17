@@ -8,14 +8,12 @@ public class RouteReply {
     private String dest_addr;
     private int dest_sequence_number;
     private int hop_cnt;
-    private int lifetime;
 
-    public RouteReply(String source_addr, String dest_addr, int dest_sequence_number, int hop_cnt, int lifetime) {
+    public RouteReply(String source_addr, String dest_addr, int dest_sequence_number, int hop_cnt) {
         this.source_addr = source_addr;
         this.dest_addr = dest_addr;
         this.dest_sequence_number = dest_sequence_number;
         this.hop_cnt = hop_cnt;
-        this.lifetime = lifetime;
     }
 
     public String getSource_addr() {
@@ -32,9 +30,5 @@ public class RouteReply {
 
     public int getHop_cnt() {
         return hop_cnt;
-    }
-
-    public int getLifetime() {
-        return lifetime;
     }
 }
