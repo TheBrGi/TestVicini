@@ -74,13 +74,9 @@ public class BtUtil {
         Object obj = null;
         NeighborGreeting ng = null;
         while (true) {
-            AcceptThread accept = new AcceptThread(btAdapter, obj, GREETING);
+            AcceptThread accept = new AcceptThread(btAdapter, GREETING);
             accept.start();
-            try {
-                accept.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            obj=accept.getAnswer();
 
             if (obj instanceof NeighborGreeting) {
                 ng = (NeighborGreeting) obj;

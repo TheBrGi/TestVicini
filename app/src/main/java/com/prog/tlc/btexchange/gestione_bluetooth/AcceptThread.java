@@ -14,12 +14,11 @@ import java.util.UUID;
 /**
  * Created by BrGi on 13/03/2016.
  */
-class AcceptThread extends Thread {
+public class AcceptThread extends Thread {
     private final BluetoothServerSocket mmServerSocket;
     private Object obj;
 
-    public AcceptThread(BluetoothAdapter mBluetoothAdapter, Object obj,String serviceName) {
-        this.obj = obj;
+    public AcceptThread(BluetoothAdapter mBluetoothAdapter, String serviceName) {
         // Use a temporary object that is later assigned to mmServerSocket,
         // because mmServerSocket is final
         BluetoothServerSocket tmp = null;
@@ -60,7 +59,17 @@ class AcceptThread extends Thread {
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
+    }
 
+    public Object getAnswer() {
+        try {
+            this.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        if(obj==null)
+            return "Nessuna risposta";
+        return obj;
     }
 
     /**

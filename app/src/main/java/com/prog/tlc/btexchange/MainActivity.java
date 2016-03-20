@@ -24,6 +24,10 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.prog.tlc.btexchange.gestione_bluetooth.AcceptThread;
+import com.prog.tlc.btexchange.gestione_bluetooth.BtUtil;
+import com.prog.tlc.btexchange.gestione_bluetooth.ConnectThread;
+
 import java.util.Set;
 import java.util.UUID;
 
@@ -49,9 +53,14 @@ public class MainActivity extends AppCompatActivity
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 // Add the name and address to an array adapter to show in a ListView
                 adapter.add(device.getName() + "\n" + device.getAddress());
-            }
+            }else if(btAdapter.getState()==btAdapter.STATE_OFF){enableBt();}
         }
     };
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,20 +95,52 @@ public class MainActivity extends AppCompatActivity
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 TextView text = (TextView) view;
                 String s = text.getText().toString();
-                Toast t=Toast.makeText(getApplicationContext(),s,Toast.LENGTH_SHORT);
+                String[] split = s.split("\n");
+                Toast t = Toast.makeText(getApplicationContext(), s, Toast.LENGTH_SHORT);
                 t.show();
+                String obj = "Ciao da " + btAdapter.getName();
+                ConnectThread connectThread = new ConnectThread(btAdapter, btAdapter.getRemoteDevice(split[1]), obj);
+                connectThread.start();
+
             }
         });
+
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    AcceptThread acceptThread = new AcceptThread(btAdapter, "Saluto");
+                    acceptThread.start();
+                    final Object obj=acceptThread.getAnswer();
+                    runOnUiThread(new Runnable() {
+                        public void run() {
+                            Toast t = Toast.makeText(getApplicationContext(), (String) obj, Toast.LENGTH_SHORT);
+                            t.show();
+                        }
+                    });
+
+
+                }
+            }
+        };
+        if (!btAdapter.isEnabled())
+            enableBt();
+        new Thread(r).start();
+
+    }
+
+    private void enableBt() {
+        Intent turnOn = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+        startActivityForResult(turnOn, BLUETOOTH_ON);
+        Intent discoverableIntent = new
+                Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+        discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 0);
+        startActivity(discoverableIntent);
     }
 
     public void scan(View v) {
         if (!btAdapter.isEnabled()) {
-            Intent turnOn = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(turnOn, BLUETOOTH_ON);
-            Intent discoverableIntent = new
-                    Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-            discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 0);
-            startActivity(discoverableIntent);
+            enableBt();
         } else
             load();
     }

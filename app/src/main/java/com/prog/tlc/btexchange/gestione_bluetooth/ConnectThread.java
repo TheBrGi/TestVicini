@@ -12,7 +12,7 @@ import java.io.ObjectOutputStream;
 /**
  * Created by BrGi on 13/03/2016.
  */
-class ConnectThread extends Thread {
+public class ConnectThread extends Thread {
     private final BluetoothSocket mmSocket;
     private final BluetoothDevice mmDevice;
     private final BluetoothAdapter mBluetoothAdapter;
@@ -56,6 +56,7 @@ class ConnectThread extends Thread {
         try {
             ObjectOutputStream oos=new ObjectOutputStream(s.getOutputStream());
             oos.writeObject(obj);
+            oos.flush();
             oos.close();
             s.close();
         } catch (IOException e) {
