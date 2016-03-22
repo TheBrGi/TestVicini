@@ -125,12 +125,13 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         };
-        try {
-            if (!btAdapter.isEnabled())
-                enableBt();
-        } finally {
-            new Thread(r).start();
+
+        if (!btAdapter.isEnabled())
+            enableBt();
+        while (!btAdapter.isEnabled()) {
         }
+        new Thread(r).start();
+
 
     }
 

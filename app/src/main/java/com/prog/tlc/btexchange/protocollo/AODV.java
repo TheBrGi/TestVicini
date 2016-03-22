@@ -21,8 +21,26 @@ public class AODV {
     }
 
 
-    //TODO public static void cercaPercorso(String dest); ricordare di fare join su handlerThread
-
+    public Percorso cercaPercorso(String dest) { //stiamo già assumendo che non ci sia un percorso valido per dest
+        int destSeqNumber = 0, hopCount = 0;
+        RouteRequest req = new RouteRequest(myDev.getMACAddress(),myDev.getSequenceNumber(),dest,destSeqNumber,hopCount,myDev.getMACAddress());
+        LinkedList<Node> vicini = gestoreVicini.getVicini();
+        for(Node vicino: vicini) {
+            //TODO inviaRREQ(req,vicino.getMACAddress());
+        }
+        myDev.incrementaSeqNum();
+        //ora ci mettiamo in attesa della reply
+        for(int i=0; i<20; i++) {
+            try {
+                Thread.sleep(1500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            if(myDev.esistePercorso(dest))
+                return myDev.getPercorso(dest);
+        }
+        return null;
+    }
 
     private class HandlerReq extends Thread {
         public void run() {
@@ -74,7 +92,7 @@ public class AODV {
             int seqDest = p.getSequenceNumber();
             int numHopDaQuiADest = p.getNumeroHop();
             RouteReply routeRep = new RouteReply(rr.getSource_addr(),rr.getDest_addr(),seqDest,numHopDaQuiADest,myDev.getMACAddress());
-            //TODO inviaReply(routeRep, rr.getLast_sender());
+            //TODO inviaRREP(routeRep,rr.getLast_sender());
             rr = null;
         }
 
@@ -82,7 +100,7 @@ public class AODV {
             RouteReply routeRep = new RouteReply(rr.getSource_addr(),rr.getDest_addr(),myDev.getSequenceNumber(),1,myDev.getMACAddress());
             /*TODO funzionalita bt che invia il nuovo route reply al nodo che ha inviato la richiesta(last sender) specificato nei
                 parametri
-                inviaReply(routeRep, rr.getLast_sender());
+                inviaRREP(routeRep,rr.getLast_sender());
              */
             rr = null;
         }
@@ -117,4 +135,5 @@ public class AODV {
             //TODO funzionalità bluetooh inviaRREP(rr,MACNextHop)
         }
     }
+
 }
