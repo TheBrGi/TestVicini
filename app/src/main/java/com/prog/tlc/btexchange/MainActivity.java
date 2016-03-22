@@ -53,7 +53,9 @@ public class MainActivity extends AppCompatActivity
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 // Add the name and address to an array adapter to show in a ListView
                 adapter.add(device.getName() + "\n" + device.getAddress());
-            }else if(btAdapter.getState()==btAdapter.STATE_OFF){enableBt();}
+            } else if (btAdapter.getState() == btAdapter.STATE_OFF) {
+                enableBt();
+            }
         }
     };
 
@@ -111,7 +113,7 @@ public class MainActivity extends AppCompatActivity
                 while (true) {
                     AcceptThread acceptThread = new AcceptThread(btAdapter, "Saluto");
                     acceptThread.start();
-                    final Object obj=acceptThread.getAnswer();
+                    final Object obj = acceptThread.getAnswer();
                     runOnUiThread(new Runnable() {
                         public void run() {
                             Toast t = Toast.makeText(getApplicationContext(), (String) obj, Toast.LENGTH_SHORT);
@@ -123,15 +125,18 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         };
-        if (!btAdapter.isEnabled())
-            enableBt();
-        new Thread(r).start();
+        try {
+            if (!btAdapter.isEnabled())
+                enableBt();
+        } finally {
+            new Thread(r).start();
+        }
 
     }
 
     private void enableBt() {
-        Intent turnOn = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-        startActivityForResult(turnOn, BLUETOOTH_ON);
+        //Intent turnOn = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+        //startActivityForResult(turnOn, BLUETOOTH_ON);
         Intent discoverableIntent = new
                 Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
         discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 0);

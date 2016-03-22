@@ -8,12 +8,24 @@ public class RouteReply {
     private String dest_addr;
     private int dest_sequence_number;
     private int hop_cnt;
+    private String last_sender; /*indirizzo MAC del nodo che ha appena inviato questa RREP*/
 
-    public RouteReply(String source_addr, String dest_addr, int dest_sequence_number, int hop_cnt) {
+
+    public RouteReply(String source_addr, String dest_addr, int dest_sequence_number, int hop_cnt, String last_sender) {
         this.source_addr = source_addr;
         this.dest_addr = dest_addr;
         this.dest_sequence_number = dest_sequence_number;
         this.hop_cnt = hop_cnt;
+        this.last_sender = last_sender;
+
+    }
+
+    public String getLast_sender() {
+        return last_sender;
+    }
+
+    public void setLast_sender(String last_sender) {
+        this.last_sender = last_sender;
     }
 
     public String getSource_addr() {
@@ -31,4 +43,6 @@ public class RouteReply {
     public int getHop_cnt() {
         return hop_cnt;
     }
+
+    public void incrementaHop_cnt() { hop_cnt++; }
 }

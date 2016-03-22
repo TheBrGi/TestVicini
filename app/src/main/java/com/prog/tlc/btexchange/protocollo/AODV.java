@@ -21,7 +21,8 @@ public class AODV {
     }
 
 
-    //TODO public static void cercaPercorso(String dest);
+    //TODO public static void cercaPercorso(String dest); ricordare di fare join su handlerThread
+
 
     private class HandlerReq extends Thread {
         public void run() {
@@ -72,13 +73,13 @@ public class AODV {
         private void reply(RouteRequest rr, Percorso p) { //il source sarà sempre tale sia in un verso che nell'altro
             int seqDest = p.getSequenceNumber();
             int numHopDaQuiADest = p.getNumeroHop();
-            RouteReply routeRep = new RouteReply(rr.getSource_addr(),rr.getDest_addr(),seqDest,numHopDaQuiADest);
+            RouteReply routeRep = new RouteReply(rr.getSource_addr(),rr.getDest_addr(),seqDest,numHopDaQuiADest,myDev.getMACAddress());
             //TODO inviaReply(routeRep, rr.getLast_sender());
             rr = null;
         }
 
-        private void reply(RouteRequest rr) {
-            RouteReply routeRep = new RouteReply(rr.getSource_addr(),rr.getDest_addr(),myDev.getSequenceNumber(),1);
+        private void reply(RouteRequest rr) { //l'hop count è sicuramente 1 in questo momento, poi (probablilmente) verrà incrementato
+            RouteReply routeRep = new RouteReply(rr.getSource_addr(),rr.getDest_addr(),myDev.getSequenceNumber(),1,myDev.getMACAddress());
             /*TODO funzionalita bt che invia il nuovo route reply al nodo che ha inviato la richiesta(last sender) specificato nei
                 parametri
                 inviaReply(routeRep, rr.getLast_sender());
@@ -87,11 +88,33 @@ public class AODV {
         }
     }
 
+
+
+
+
+
     private class HandlerReply extends Thread { //TODO gestire incremento di hop nel reply
         public void run() {
             while(true) {
                 //TODO RouteReply rr = ascoltaRichiesta(); metodo statico del bt
+                RouteReply rr = null;
+                estrapolaPercorsoRREP(rr);
+                if(!rr.getSource_addr().equals(myDev.getMACAddress())) { //npn siamo noi la sorgente
+                    rr.incrementaHop_cnt();
+                    rr.setLast_sender(myDev.getMACAddress());
+                    rilanciaReply(rr);
+                }
             }
+        }
+
+        private void estrapolaPercorsoRREP(RouteReply rr) { //il source sarà sempre tale sia in un verso che nell'altro
+            Percorso p = new Percorso(rr.getDest_addr(),rr.getLast_sender(),rr.getHop_cnt(),rr.getDest_sequence_number());
+            myDev.aggiungiPercorso(p);
+        }
+
+        private void rilanciaReply(RouteReply rr) {
+            String MACNextHop = myDev.getPercorso(rr.getSource_addr()).getNextHop();
+            //TODO funzionalità bluetooh inviaRREP(rr,MACNextHop)
         }
     }
 }
