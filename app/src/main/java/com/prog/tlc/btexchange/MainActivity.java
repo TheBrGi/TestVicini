@@ -35,7 +35,6 @@ public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
     private BluetoothAdapter btAdapter;
     private Set<BluetoothDevice> dispositivi;
-
     public BluetoothAdapter getBtAdapter() {
         return btAdapter;
     }
@@ -78,7 +77,7 @@ public class MainActivity extends AppCompatActivity
         //                .setAction("Action", null).show();
         //    }
         //});
-
+        BtUtil.setContext(this.getApplicationContext());
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);

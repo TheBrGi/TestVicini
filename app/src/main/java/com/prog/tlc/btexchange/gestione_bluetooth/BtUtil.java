@@ -21,14 +21,26 @@ public class BtUtil {
     public static final UUID myUUID = UUID.fromString("d7a628a4-e911-11e5-9ce9-5e5517507c66");
     private final static long ATTESA = 10000;
     public static final String GREETING = "greeting";
-
+    private static Context context;
     private BtUtil() {
     }
+    public static void setContext(Context c){context=c;}
+    public static Context getContext(){return context;}
+    public static void enableBt(){
+        Intent discoverableIntent = new
+                Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+        discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 0);
+        discoverableIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        getContext().startActivity(discoverableIntent);
+        BluetoothAdapter btAdapter=getBtAdapter();
+        while (!btAdapter.isEnabled()) {
+        }
+    }
 
-    public static Context getContext() {
+    /*public static Context getContext() {
         Application app = new Application();
         return app.getApplicationContext();
-    }
+    }*/
 
     public static BluetoothAdapter getBtAdapter() {
         return BluetoothAdapter.getDefaultAdapter();

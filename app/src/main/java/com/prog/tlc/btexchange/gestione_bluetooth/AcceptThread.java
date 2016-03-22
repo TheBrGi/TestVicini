@@ -15,26 +15,37 @@ import java.util.UUID;
  * Created by BrGi on 13/03/2016.
  */
 public class AcceptThread extends Thread {
-    private final BluetoothServerSocket mmServerSocket;
+    private BluetoothServerSocket mmServerSocket;
     private Object obj;
+    private String serviceName;
+    private BluetoothAdapter mBluetoothAdapter;
 
     public AcceptThread(BluetoothAdapter mBluetoothAdapter, String serviceName) {
         // Use a temporary object that is later assigned to mmServerSocket,
         // because mmServerSocket is final
-        BluetoothServerSocket tmp = null;
-        try {
-            // MY_UUID is the app's UUID string, also used by the client code
-            tmp = mBluetoothAdapter.listenUsingRfcommWithServiceRecord(serviceName, BtUtil.myUUID);
-        } catch (IOException e) {
-        }
-        mmServerSocket = tmp;
+        this.mBluetoothAdapter=mBluetoothAdapter;
+        this.serviceName=serviceName;
+        avviaServer();
     }
-
+private void avviaServer(){
+    BluetoothServerSocket tmp = null;
+    try {
+        // MY_UUID is the app's UUID string, also used by the client code
+        tmp = mBluetoothAdapter.listenUsingRfcommWithServiceRecord(serviceName, BtUtil.myUUID);
+    } catch (IOException e) {
+    }
+    mmServerSocket = tmp;
+}
     public void run() {
         BluetoothSocket socket = null;
         // Keep listening until exception occurs or a socket is returned
         while (true) {
             try {
+                //if (!BtUtil.getBtAdapter().isEnabled()){
+                //    BtUtil.enableBt();
+                //    avviaServer();
+                //}
+
                 socket = mmServerSocket.accept();
                 // If a connection was accepted
                 if (socket != null) {
@@ -45,6 +56,10 @@ public class AcceptThread extends Thread {
                 }
             } catch (IOException e) {
                 break;
+            } catch (NullPointerException ex){
+                BtUtil.enableBt();
+                avviaServer();
+                continue;
             }
 
         }
@@ -67,7 +82,7 @@ public class AcceptThread extends Thread {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        if(obj==null)
+        if (obj == null)
             return "Nessuna risposta";
         return obj;
     }
