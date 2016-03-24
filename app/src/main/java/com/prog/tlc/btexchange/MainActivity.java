@@ -7,8 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
+import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -27,6 +26,9 @@ import android.widget.Toast;
 import com.prog.tlc.btexchange.gestione_bluetooth.AcceptThread;
 import com.prog.tlc.btexchange.gestione_bluetooth.BtUtil;
 import com.prog.tlc.btexchange.gestione_bluetooth.ConnectThread;
+import com.prog.tlc.btexchange.lmbluetoothsdk.BluetoothController;
+import com.prog.tlc.btexchange.lmbluetoothsdk.base.BluetoothListener;
+import com.prog.tlc.btexchange.lmbluetoothsdk.base.State;
 
 import java.util.Set;
 import java.util.UUID;
@@ -35,10 +37,12 @@ public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
     private BluetoothAdapter btAdapter;
     private Set<BluetoothDevice> dispositivi;
+
     public BluetoothAdapter getBtAdapter() {
         return btAdapter;
     }
 
+    BluetoothController bc;
     private ListView lv;
     private ArrayAdapter<String> adapter = null;
     private static final int BLUETOOTH_ON = 1000;
@@ -100,12 +104,16 @@ public class MainActivity extends AppCompatActivity
                 Toast t = Toast.makeText(getApplicationContext(), s, Toast.LENGTH_SHORT);
                 t.show();
                 String obj = "Ciao da " + btAdapter.getName();
-                ConnectThread connectThread = new ConnectThread(btAdapter, btAdapter.getRemoteDevice(split[1]), obj);
-                connectThread.start();
-
+                bc.connect(split[1]);
+                while(!(bc.getConnectionState()== State.STATE_CONNECTED)){}
+                Log.d("stato connessione", String.valueOf(bc.getConnectionState()));
+                bc.write(obj);
+                while(bc.getConnectionState()==State.STATE_CONNECTED){}
+                bc.startAsServer();
+                //bc.disconnect();
             }
         });
-
+        /*
         Runnable r = new Runnable() {
             @Override
             public void run() {
@@ -129,44 +137,96 @@ public class MainActivity extends AppCompatActivity
             enableBt();
         while (!btAdapter.isEnabled()) {
         }
-        new Thread(r).start();
+        new Thread(r).start();*/
+        bc = BluetoothController.getInstance();
+        bc.build(this);
+        if (!bc.isEnabled()) {
+            enableBt();
+        }
+        bc.startAsServer();
+        bc.setBluetoothListener(new BluetoothListener() {
 
+            @Override
+            public void onActionStateChanged(int preState, int state) {
+                // Callback when bluetooth power state changed.
+            }
+
+            @Override
+            public void onActionDiscoveryStateChanged(String discoveryState) {
+                // Callback when local Bluetooth adapter discovery process state changed.
+            }
+
+            @Override
+            public void onActionScanModeChanged(int preScanMode, int scanMode) {
+                // Callback when the current scan mode changed.
+            }
+
+            @Override
+            public void onBluetoothServiceStateChanged(int state) {
+                // Callback when the connection state changed.
+            }
+
+            @Override
+            public void onActionDeviceFound(BluetoothDevice device, short rssi) {
+                // Callback when found device.
+                adapter.add(device.getName() + "\n" + device.getAddress());
+            }
+
+            @Override
+            public void onReadData(final BluetoothDevice device, final Object data) {
+                // Callback when remote device send data to current device.
+                //bc.disconnect();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast t = Toast.makeText(getApplicationContext(), (String)data, Toast.LENGTH_SHORT);
+                        t.show();
+                    }
+                });
+                bc.disconnect();
+                bc.startAsServer();
+            }
+        });
 
     }
 
     private void enableBt() {
         //Intent turnOn = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
         //startActivityForResult(turnOn, BLUETOOTH_ON);
-        Intent discoverableIntent = new
+        /*Intent discoverableIntent = new
                 Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
         discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 0);
-        startActivity(discoverableIntent);
+        startActivity(discoverableIntent);*/
+        bc.openBluetooth();
+        bc.setDiscoverable(0);
+        while(!bc.isEnabled()){}
     }
 
     public void scan(View v) {
-        if (!btAdapter.isEnabled()) {
+        if (!bc.isEnabled()) {
             enableBt();
-        } else
-            load();
-    }
-
-    private void load() {
-        if (mReceiver.isOrderedBroadcast()) unregisterReceiver(mReceiver);
+        }
+        load();
+    }void load() {
+        /*if (mReceiver.isOrderedBroadcast()) unregisterReceiver(mReceiver);
         btAdapter.cancelDiscovery();
         adapter.clear();
         // Register the BroadcastReceiver
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         registerReceiver(mReceiver, filter); // Don't forget to unregister during onDestroy
-        btAdapter.startDiscovery();
+        btAdapter.startDiscovery();*/
+        adapter.clear();
+        bc.cancelScan();
+        bc.startScan();
     }
 
-    @Override
+    /*@Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == BLUETOOTH_ON && resultCode == RESULT_OK) {
             load();
         }
-    }
+    }*/
 
     @Override
     public void onBackPressed() {
