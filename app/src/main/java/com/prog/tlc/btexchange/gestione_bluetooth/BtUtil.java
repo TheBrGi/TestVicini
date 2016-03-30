@@ -7,8 +7,13 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.util.Log;
+import android.widget.Toast;
 
 import com.prog.tlc.btexchange.gestioneDispositivo.Node;
+import com.prog.tlc.btexchange.lmbluetoothsdk.BluetoothController;
+import com.prog.tlc.btexchange.lmbluetoothsdk.base.BluetoothListener;
+import com.prog.tlc.btexchange.lmbluetoothsdk.base.State;
 import com.prog.tlc.btexchange.protocollo.NeighborGreeting;
 
 import java.util.LinkedList;
@@ -22,8 +27,15 @@ public class BtUtil {
     private final static long ATTESA = 10000;
     public static final String GREETING = "greeting";
     private static Context context;
+    private static BluetoothController bc= new BluetoothController();
+
     private BtUtil() {
     }
+
+    public static BluetoothController getBluetoothController(){
+        return bc;
+    }
+
     public static void setContext(Context c){context=c;}
     public static Context getContext(){return context;}
     public static void enableBt(){
@@ -72,6 +84,67 @@ public class BtUtil {
         }
         context.unregisterReceiver(mReceiver);
         return lista;
+    }
+
+    public static String riceviStringa(){
+
+        bc.build(getContext());
+        if (!bc.isEnabled()) {
+            enableBt();
+        }
+        bc.startAsServer();
+        final String[] s = new String[1];
+        bc.setBluetoothListener(new BluetoothListener() {
+
+            @Override
+            public void onActionStateChanged(int preState, int state) {
+                // Callback when bluetooth power state changed.
+            }
+
+            @Override
+            public void onActionDiscoveryStateChanged(String discoveryState) {
+                // Callback when local Bluetooth adapter discovery process state changed.
+            }
+
+            @Override
+            public void onActionScanModeChanged(int preScanMode, int scanMode) {
+                // Callback when the current scan mode changed.
+            }
+
+            @Override
+            public void onBluetoothServiceStateChanged(int state) {
+                // Callback when the connection state changed.
+            }
+
+            @Override
+            public void onActionDeviceFound(BluetoothDevice device, short rssi) {
+                // Callback when found device.
+            }
+
+            @Override
+            public void onReadData(final BluetoothDevice device, final Object data) {
+                // Callback when remote device send data to current device.
+                //bc.disconnect();
+                s[0] = (String) data;
+                bc.disconnect();
+            }
+        });
+        while(s[0]==null){}
+        return s[0];
+    }
+
+    public static void mandaStringa(String s,String addr){
+        bc.build(getContext());
+        if (!bc.isEnabled()) {
+            enableBt();
+        }
+        bc.connect(addr);
+        while (!(bc.getConnectionState() == State.STATE_CONNECTED)) {
+        }
+        Log.d("stato connessione", String.valueOf(bc.getConnectionState()));
+        bc.write(s);
+        while (bc.getConnectionState() == State.STATE_CONNECTED) {
+        }
     }
 
     public static void inviaGreeting(NeighborGreeting greet, Node vicino) {

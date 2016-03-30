@@ -39,8 +39,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
     private BluetoothController bc;
     private ListView lv;
     private ArrayAdapter<String> adapter = null;
@@ -62,6 +61,8 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        BtUtil.getBluetoothController().build(this);
+
         //FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         //fab.setOnClickListener(new View.OnClickListener() {
         //    public void onClick(View view) {
@@ -78,36 +79,9 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-
-        lv = (ListView) findViewById(R.id.listview);
-        adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1);
-        lv.setAdapter(adapter);
-        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                TextView text = (TextView) view;
-                String s = text.getText().toString();
-                String[] split = s.split("\n");
-                Toast t = Toast.makeText(getApplicationContext(), s, Toast.LENGTH_SHORT);
-                t.show();
-                String obj = "Ciao da " + BtUtil.getBtAdapter().getName();
-                bc.connect(split[1]);
-                while (!(bc.getConnectionState() == State.STATE_CONNECTED)) {
-                }
-                Log.d("stato connessione", String.valueOf(bc.getConnectionState()));
-                bc.write(obj);
-                while (bc.getConnectionState() == State.STATE_CONNECTED) {
-                }
-                bc.startAsServer();
-                //bc.disconnect();
-            }
-        });
-        bc = BluetoothController.getInstance();
+        BtUtil.getBluetoothController().build(this);
+        bc = new BluetoothController();
         bc.build(this);
-        if (!bc.isEnabled()) {
-            enableBt();
-        }
-        bc.startAsServer();
         bc.setBluetoothListener(new BluetoothListener() {
 
             @Override
@@ -133,34 +107,52 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onActionDeviceFound(BluetoothDevice device, short rssi) {
                 // Callback when found device.
-                //adapter.add(device.getName() + "\n" + device.getAddress());
+                adapter.add(device.getName() + "\n" + device.getAddress());
             }
 
             @Override
             public void onReadData(final BluetoothDevice device, final Object data) {
                 // Callback when remote device send data to current device.
-                //bc.disconnect();
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast t = Toast.makeText(getApplicationContext(), (String) data, Toast.LENGTH_SHORT);
-                        t.show();
-                    }
-                });
-                bc.disconnect();
-                bc.startAsServer();
             }
         });
+        lv = (ListView) findViewById(R.id.listview);
+        adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1);
+        lv.setAdapter(adapter);
+        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                TextView text = (TextView) view;
+                String s = text.getText().toString();
+                String[] split = s.split("\n");
+                Toast t = Toast.makeText(getApplicationContext(), s, Toast.LENGTH_SHORT);
+                t.show();
+                String obj = "Ciao da " + BtUtil.getBtAdapter().getName();
+                BtUtil.mandaStringa(obj, split[1]);
 
-        //cose nostre
-        this.mioDispositivo = new Dispositivo(BtUtil.getBtAdapter().getName());
-        this.protocollo = new AODV(mioDispositivo, TEMPO_ATTESA_VICINI);
-        stampaNodiAVideo();
+            }
+        });
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    final String data = BtUtil.riceviStringa();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast t = Toast.makeText(getApplicationContext(), data, Toast.LENGTH_SHORT);
+                            t.show();
+                        }
+                    });
+                }
+            }
+        };
+        new Thread(r).start();
+
 
     }
 
     private void stampaNodiAVideo() {
-        Runnable r=new Runnable() {
+        Runnable r = new Runnable() {
             @Override
             public void run() {
                 while (true) {
