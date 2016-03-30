@@ -4,7 +4,7 @@ import com.prog.tlc.btexchange.gestioneDispositivo.*;
 import com.prog.tlc.btexchange.gestione_bluetooth.BtUtil;
 
 import java.sql.Time;
-import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Created by Domenico on 15/03/2016.
@@ -17,7 +17,7 @@ public class GestoreVicini extends Thread {
 
     private Dispositivo myDisp;
     private final long ATTESA;
-    private LinkedList<Node> vicini;
+    private List<Node> vicini;
 
 
     public GestoreVicini(Dispositivo d, long tempoAttesa) {
@@ -26,7 +26,7 @@ public class GestoreVicini extends Thread {
         new Ascoltatore().start();
     }
 
-    public LinkedList<Node> getVicini() {
+    public List<Node> getVicini() {
         return vicini;
     }
 
@@ -48,18 +48,18 @@ public class GestoreVicini extends Thread {
     private class Ascoltatore extends Thread {
         public void run() {
             while (true) {
-                LinkedList<Node> nuoveInfo = BtUtil.riceviGreeting().getNodiNoti();
+                List<Node> nuoveInfo = BtUtil.riceviGreeting().getNodiNoti();
                 mergeNodi(nuoveInfo); /*fondende gli elementi della lista
                                         myDisp insieme ai nodi della lista nuoveInfo*/
             }
         }
 
-        private void mergeNodi(LinkedList <Node> nuoveInfo){
-            for (Node n : nuoveInfo){
-                    if(!(myDisp.getListaNodi().contains(n)))
-                        myDisp.aggiungiNodo(n);
+        private void mergeNodi(List <Node> nuoveInfo) {
+            for (Node n : nuoveInfo) {
+                if (!(myDisp.getListaNodi().contains(n))) {
+                    myDisp.aggiungiNodo(n);
                 }
+            }
         }
-
     }
 }

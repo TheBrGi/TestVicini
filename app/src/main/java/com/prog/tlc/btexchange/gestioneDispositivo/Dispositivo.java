@@ -3,16 +3,19 @@ package com.prog.tlc.btexchange.gestioneDispositivo;
 import com.prog.tlc.btexchange.gestione_bluetooth.BtUtil;
 import com.prog.tlc.btexchange.protocollo.RouteRequest;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by Domenico on 10/03/2016.
  */
 public class Dispositivo {
-    private LinkedList<Node> listaNodi;
-    private HashMap<String, Percorso> tabellaDiRouting;
-    private HashMap<String,Integer> RREQRicevuti;
+    private List<Node> listaNodi;
+    private ConcurrentHashMap<String, Percorso> tabellaDiRouting;
+    private ConcurrentHashMap<String, Integer> RREQRicevuti;
     private String nome, MACAddress;
     private int sequenceNumber;//si incrementa dopo l'avvio di una route discovery o di una reply
 
@@ -21,13 +24,13 @@ public class Dispositivo {
         nome = n;
         String MACAddress = BtUtil.getMACMioDispositivo();
         int sequenceNumber = 1;
-        listaNodi = new LinkedList<>();
-        listaNodi.addFirst(new Node(n,MACAddress));
-        tabellaDiRouting = new HashMap<>();
-        RREQRicevuti = new HashMap<>();
+        listaNodi = Collections.synchronizedList(new LinkedList<Node>());
+        listaNodi.add(new Node(n, MACAddress));
+        tabellaDiRouting = new ConcurrentHashMap<>();
+        RREQRicevuti = new ConcurrentHashMap<>();
     }
 
-    public LinkedList<Node> getListaNodi() {
+    public List<Node> getListaNodi() {
         return listaNodi;
     }
 
@@ -35,7 +38,7 @@ public class Dispositivo {
         return nome;
     }
 
-    public HashMap<String, Percorso> getTabellaDiRouting() {
+    public ConcurrentHashMap<String, Percorso> getTabellaDiRouting() {
         return tabellaDiRouting;
     }
 
@@ -52,10 +55,16 @@ public class Dispositivo {
     }
 
     public void aggiungiNodo(Node n) {
-        listaNodi.addFirst(n);
+        synchronized (listaNodi) {
+            listaNodi.add(n);
+        }
     }
 
-    public void rimuoviNodo(Node n) { listaNodi.remove(n); }
+    public void rimuoviNodo(Node n) {
+        synchronized (listaNodi) {
+            listaNodi.remove(n);
+        }
+    }
 
     public void aggiungiPercorso(Percorso p) {
         String destinazione = p.getDestinazione();
@@ -72,14 +81,13 @@ public class Dispositivo {
         return null;
     }
 
-    public HashMap<String, Integer> getRREQRicevuti() {
+    public ConcurrentHashMap<String, Integer> getRREQRicevuti() {
         return RREQRicevuti;
     }
 
     public void aggiungiRREQ(RouteRequest rr) {
-        RREQRicevuti.put(rr.getSource_addr(),rr.getSource_sequence_number());
+        RREQRicevuti.put(rr.getSource_addr(), rr.getSource_sequence_number());
     }
-
 
 
 }

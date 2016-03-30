@@ -23,44 +23,32 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.prog.tlc.btexchange.gestioneDispositivo.Dispositivo;
+import com.prog.tlc.btexchange.gestioneDispositivo.Node;
 import com.prog.tlc.btexchange.gestione_bluetooth.AcceptThread;
 import com.prog.tlc.btexchange.gestione_bluetooth.BtUtil;
 import com.prog.tlc.btexchange.gestione_bluetooth.ConnectThread;
 import com.prog.tlc.btexchange.lmbluetoothsdk.BluetoothController;
 import com.prog.tlc.btexchange.lmbluetoothsdk.base.BluetoothListener;
 import com.prog.tlc.btexchange.lmbluetoothsdk.base.State;
+import com.prog.tlc.btexchange.protocollo.AODV;
 
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
-    private BluetoothAdapter btAdapter;
-    private Set<BluetoothDevice> dispositivi;
-
-    public BluetoothAdapter getBtAdapter() {
-        return btAdapter;
-    }
-
-    BluetoothController bc;
+    private BluetoothController bc;
     private ListView lv;
     private ArrayAdapter<String> adapter = null;
-    private static final int BLUETOOTH_ON = 1000;
-    // Create a BroadcastReceiver for ACTION_FOUND
-    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            // When discovery finds a device
-            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-                // Get the BluetoothDevice object from the Intent
-                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                // Add the name and address to an array adapter to show in a ListView
-                adapter.add(device.getName() + "\n" + device.getAddress());
-            } else if (btAdapter.getState() == btAdapter.STATE_OFF) {
-                enableBt();
-            }
-        }
-    };
+
+    private AODV protocollo;
+    private Dispositivo mioDispositivo;
+    private final long TEMPO_ATTESA_VICINI = 7500;
+
 
     @Override
     protected void onPause() {
@@ -91,7 +79,6 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        btAdapter = BluetoothAdapter.getDefaultAdapter();
         lv = (ListView) findViewById(R.id.listview);
         adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1);
         lv.setAdapter(adapter);
@@ -103,41 +90,18 @@ public class MainActivity extends AppCompatActivity
                 String[] split = s.split("\n");
                 Toast t = Toast.makeText(getApplicationContext(), s, Toast.LENGTH_SHORT);
                 t.show();
-                String obj = "Ciao da " + btAdapter.getName();
+                String obj = "Ciao da " + BtUtil.getBtAdapter().getName();
                 bc.connect(split[1]);
-                while(!(bc.getConnectionState()== State.STATE_CONNECTED)){}
+                while (!(bc.getConnectionState() == State.STATE_CONNECTED)) {
+                }
                 Log.d("stato connessione", String.valueOf(bc.getConnectionState()));
                 bc.write(obj);
-                while(bc.getConnectionState()==State.STATE_CONNECTED){}
+                while (bc.getConnectionState() == State.STATE_CONNECTED) {
+                }
                 bc.startAsServer();
                 //bc.disconnect();
             }
         });
-        /*
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    AcceptThread acceptThread = new AcceptThread(btAdapter, "Saluto");
-                    acceptThread.start();
-                    final Object obj = acceptThread.getAnswer();
-                    runOnUiThread(new Runnable() {
-                        public void run() {
-                            Toast t = Toast.makeText(getApplicationContext(), (String) obj, Toast.LENGTH_SHORT);
-                            t.show();
-                        }
-                    });
-
-
-                }
-            }
-        };
-
-        if (!btAdapter.isEnabled())
-            enableBt();
-        while (!btAdapter.isEnabled()) {
-        }
-        new Thread(r).start();*/
         bc = BluetoothController.getInstance();
         bc.build(this);
         if (!bc.isEnabled()) {
@@ -169,7 +133,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onActionDeviceFound(BluetoothDevice device, short rssi) {
                 // Callback when found device.
-                adapter.add(device.getName() + "\n" + device.getAddress());
+                //adapter.add(device.getName() + "\n" + device.getAddress());
             }
 
             @Override
@@ -179,7 +143,7 @@ public class MainActivity extends AppCompatActivity
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Toast t = Toast.makeText(getApplicationContext(), (String)data, Toast.LENGTH_SHORT);
+                        Toast t = Toast.makeText(getApplicationContext(), (String) data, Toast.LENGTH_SHORT);
                         t.show();
                     }
                 });
@@ -188,6 +152,32 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+        //cose nostre
+        this.mioDispositivo = new Dispositivo(BtUtil.getBtAdapter().getName());
+        this.protocollo = new AODV(mioDispositivo, TEMPO_ATTESA_VICINI);
+        stampaNodiAVideo();
+
+    }
+
+    private void stampaNodiAVideo() {
+        Runnable r=new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    adapter.clear(); //TODO controllare che stampi i nodi giusti
+                    LinkedList<Node> tuttiNodi = new LinkedList<>(mioDispositivo.getListaNodi());
+                    tuttiNodi.removeFirst();
+                    adapter.addAll((Collection) tuttiNodi);
+                    tuttiNodi = null;
+                    try {
+                        wait(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        };
+        new Thread(r).start();
     }
 
     private void enableBt() {
@@ -199,7 +189,8 @@ public class MainActivity extends AppCompatActivity
         startActivity(discoverableIntent);*/
         bc.openBluetooth();
         bc.setDiscoverable(0);
-        while(!bc.isEnabled()){}
+        while (!bc.isEnabled()) {
+        }
     }
 
     public void scan(View v) {
@@ -207,7 +198,9 @@ public class MainActivity extends AppCompatActivity
             enableBt();
         }
         load();
-    }void load() {
+    }
+
+    void load() {
         /*if (mReceiver.isOrderedBroadcast()) unregisterReceiver(mReceiver);
         btAdapter.cancelDiscovery();
         adapter.clear();

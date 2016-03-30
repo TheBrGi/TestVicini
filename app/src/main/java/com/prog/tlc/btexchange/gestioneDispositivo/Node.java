@@ -27,4 +27,8 @@ public class Node {
             return true;
         return false;
     }//equals
+
+    public String toString() {
+        return this.getNome()+"\n"+this.getMACAddress();
+    }
 }

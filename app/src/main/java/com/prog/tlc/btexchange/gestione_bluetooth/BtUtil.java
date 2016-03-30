@@ -89,7 +89,6 @@ public class BtUtil {
             AcceptThread accept = new AcceptThread(btAdapter, GREETING);
             accept.start();
             obj=accept.getAnswer();
-
             if (obj instanceof NeighborGreeting) {
                 ng = (NeighborGreeting) obj;
                 break;
