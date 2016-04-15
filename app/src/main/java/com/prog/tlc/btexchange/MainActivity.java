@@ -61,8 +61,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        BtUtil.getBluetoothController().build(this);
-
         //FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         //fab.setOnClickListener(new View.OnClickListener() {
         //    public void onClick(View view) {
@@ -79,9 +77,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-        BtUtil.getBluetoothController().build(this);
-        bc = new BluetoothController();
-        bc.build(this);
+
+        bc = BtUtil.getBluetoothController();
+        BtUtil.enableBt();
         bc.setBluetoothListener(new BluetoothListener() {
 
             @Override
@@ -186,9 +184,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     public void scan(View v) {
-        if (!bc.isEnabled()) {
-            enableBt();
-        }
+        BtUtil.enableBt();
         load();
     }
 

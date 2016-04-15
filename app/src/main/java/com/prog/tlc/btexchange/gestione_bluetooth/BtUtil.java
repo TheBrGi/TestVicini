@@ -27,26 +27,40 @@ public class BtUtil {
     private final static long ATTESA = 10000;
     public static final String GREETING = "greeting";
     private static Context context;
-    private static BluetoothController bc= new BluetoothController();
+    private static BluetoothController bc = new BluetoothController();
 
     private BtUtil() {
     }
 
-    public static BluetoothController getBluetoothController(){
+    public static BluetoothController getBluetoothController() {
+        bc.build(getContext());
         return bc;
     }
 
-    public static void setContext(Context c){context=c;}
-    public static Context getContext(){return context;}
-    public static void enableBt(){
-        Intent discoverableIntent = new
+    public static void setContext(Context c) {
+        context = c;
+    }
+
+    public static Context getContext() {
+        return context;
+    }
+
+    public static void enableBt() {
+        if (!bc.isEnabled()) {
+            bc.openBluetooth();
+            //bc.setDiscoverable(0);
+            while (!bc.isEnabled()) {
+            }
+
+        }
+        /*Intent discoverableIntent = new
                 Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
         discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 0);
         discoverableIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         getContext().startActivity(discoverableIntent);
         BluetoothAdapter btAdapter=getBtAdapter();
         while (!btAdapter.isEnabled()) {
-        }
+        }*/
     }
 
     /*public static Context getContext() {
@@ -86,12 +100,12 @@ public class BtUtil {
         return lista;
     }
 
-    public static String riceviStringa(){
-
+    public static String riceviStringa() {
+        BluetoothController bc = new BluetoothController();
         bc.build(getContext());
-        if (!bc.isEnabled()) {
-            enableBt();
-        }
+
+        enableBt();
+
         bc.startAsServer();
         final String[] s = new String[1];
         bc.setBluetoothListener(new BluetoothListener() {
@@ -126,25 +140,25 @@ public class BtUtil {
                 // Callback when remote device send data to current device.
                 //bc.disconnect();
                 s[0] = (String) data;
-                bc.disconnect();
             }
         });
-        while(s[0]==null){}
+        while (s[0] == null) {
+        }
+        bc.disconnect();
         return s[0];
     }
 
-    public static void mandaStringa(String s,String addr){
+    public static void mandaStringa(String s, String addr) {
+        BluetoothController bc = new BluetoothController();
         bc.build(getContext());
-        if (!bc.isEnabled()) {
-            enableBt();
-        }
+        enableBt();
         bc.connect(addr);
         while (!(bc.getConnectionState() == State.STATE_CONNECTED)) {
         }
         Log.d("stato connessione", String.valueOf(bc.getConnectionState()));
         bc.write(s);
-        while (bc.getConnectionState() == State.STATE_CONNECTED) {
-        }
+        /*while (bc.getConnectionState() == State.STATE_CONNECTED) {
+        }*/
     }
 
     public static void inviaGreeting(NeighborGreeting greet, Node vicino) {
@@ -161,7 +175,7 @@ public class BtUtil {
         while (true) {
             AcceptThread accept = new AcceptThread(btAdapter, GREETING);
             accept.start();
-            obj=accept.getAnswer();
+            obj = accept.getAnswer();
             if (obj instanceof NeighborGreeting) {
                 ng = (NeighborGreeting) obj;
                 break;
@@ -170,5 +184,7 @@ public class BtUtil {
         return ng;
     }
 
-    public static String getMACMioDispositivo() { return BluetoothAdapter.getDefaultAdapter().getAddress(); }
+    public static String getMACMioDispositivo() {
+        return BluetoothAdapter.getDefaultAdapter().getAddress();
+    }
 }
