@@ -181,10 +181,11 @@ public class BluetoothController extends Bluetooth {
     }
 
     @Override
-    public void write(Object data) {
+    public boolean write(Object data) {
         if (mBluetoothService != null){
-            mBluetoothService.write(data);
+            return mBluetoothService.write(data);
         }
+        return false;
     }
 
     /**

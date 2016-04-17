@@ -122,8 +122,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 TextView text = (TextView) view;
                 String s = text.getText().toString();
                 String[] split = s.split("\n");
-                Toast t = Toast.makeText(getApplicationContext(), s, Toast.LENGTH_SHORT);
-                t.show();
+                //Toast t = Toast.makeText(getApplicationContext(), s, Toast.LENGTH_SHORT);
+                //t.show();
                 String obj = "Ciao da " + BtUtil.getBtAdapter().getName();
                 BtUtil.mandaStringa(obj, split[1]);
 
@@ -134,6 +134,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             public void run() {
                 while (true) {
                     final String data = BtUtil.riceviStringa();
+                    if (data == null) continue;
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {

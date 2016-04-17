@@ -60,6 +60,7 @@ public class BluetoothService {
 
     /**
      * Set bluetooth listener.
+     *
      * @param listener BaseListener
      */
     public synchronized void setBluetoothListener(BaseListener listener) {
@@ -68,6 +69,7 @@ public class BluetoothService {
 
     /**
      * Get current SDP recorded UUID.
+     *
      * @return an UUID
      */
     public UUID getAppUuid() {
@@ -76,6 +78,7 @@ public class BluetoothService {
 
     /**
      * Set a UUID for SDP record.
+     *
      * @param uuid an UUID
      */
     public void setAppUuid(UUID uuid) {
@@ -84,11 +87,12 @@ public class BluetoothService {
 
     /**
      * Set the current state of the connection.
-     * @param state  An integer defining the current connection state
+     *
+     * @param state An integer defining the current connection state
      */
     private synchronized void setState(int state) {
         mState = state;
-        if (mBluetoothListener != null){
+        if (mBluetoothListener != null) {
             mBluetoothListener.onBluetoothServiceStateChanged(state);
         }
     }
@@ -97,6 +101,7 @@ public class BluetoothService {
      * Get the current state of connection.
      * Possible return values are STATE_NONE, STATE_LISTEN, STATE_CONNECTING, STATE_CONNECTED,
      * STATE_DISCONNECTED, STATE_UNKNOWN in {@link com.prog.tlc.btexchange.lmbluetoothsdk.base.State} class.
+     *
      * @return the connection state
      */
     public int getState() {
@@ -112,7 +117,7 @@ public class BluetoothService {
             mConnectThread = null;
         }
         if (mConnectedThread != null) {
-            mConnectedThread.cancel(); 
+            mConnectedThread.cancel();
             mConnectedThread = null;
         }
         if (mAcceptThread == null) {
@@ -124,6 +129,7 @@ public class BluetoothService {
 
     /**
      * Start the ConnectThread to initiate a connection to a remote device.
+     *
      * @param device The BluetoothDevice to connect
      */
     public synchronized void connect(BluetoothDevice device) {
@@ -142,6 +148,7 @@ public class BluetoothService {
 
     /**
      * Start the ConnectedThread to begin managing a Bluetooth connection.
+     *
      * @param socket The BluetoothSocket on which the connection was made
      */
     public synchronized void connected(BluetoothSocket socket) {
@@ -185,17 +192,19 @@ public class BluetoothService {
 
     /**
      * Write to the ConnectedThread in an unsynchronized manner.
+     *
      * @param out The bytes to write
      */
-    public void write(Object out) {
+    public boolean write(Object out) {
         ConnectedThread r;
         synchronized (this) {
             if (mState != State.STATE_CONNECTED) {
-                return;
+                return false;
             }
             r = mConnectedThread;
         }
         r.write(out);
+        return false;
     }
 
     /**
@@ -230,9 +239,10 @@ public class BluetoothService {
 
     /**
      * Get connected device.
+     *
      * @return a bluetooth device
      */
-    public BluetoothDevice getConnectedDevice(){
+    public BluetoothDevice getConnectedDevice() {
         return mBluetoothDevice;
     }
 
@@ -244,21 +254,24 @@ public class BluetoothService {
     private class AcceptThread extends Thread {
 
         private final BluetoothServerSocket mmServerSocket;
-        
+
         public AcceptThread() {
             BluetoothServerSocket tmp = null;
             try {
                 tmp = mAdapter.listenUsingInsecureRfcommWithServiceRecord(TAG, mAppUuid);
-            } catch (IOException e) {}
+            } catch (IOException e) {
+            }
             mmServerSocket = tmp;
         }
-        
+
         public void run() {
             BluetoothSocket socket = null;
             while (mState != com.prog.tlc.btexchange.lmbluetoothsdk.base.State.STATE_CONNECTED) {
                 try {
                     socket = mmServerSocket.accept();
                 } catch (IOException e) {
+                    break;
+                } catch (NullPointerException e) {
                     break;
                 }
                 if (socket != null) {
@@ -273,18 +286,20 @@ public class BluetoothService {
                             case com.prog.tlc.btexchange.lmbluetoothsdk.base.State.STATE_CONNECTED:
                                 try {
                                     socket.close();
-                                } catch (IOException e) {}
+                                } catch (IOException e) {
+                                }
                                 break;
                         }
                     }
                 }
             }
         }
-        
+
         public void cancel() {
             try {
                 mmServerSocket.close();
-            } catch (IOException e) {}
+            } catch (IOException e) {
+            }
         }
     }
 
@@ -296,15 +311,16 @@ public class BluetoothService {
     private class ConnectThread extends Thread {
 
         private final BluetoothSocket mmSocket;
-        
+
         public ConnectThread(BluetoothDevice device) {
             BluetoothSocket tmp = null;
             try {
                 tmp = device.createInsecureRfcommSocketToServiceRecord(mAppUuid);
-            } catch (IOException e) {}
+            } catch (IOException e) {
+            }
             mmSocket = tmp;
         }
-        
+
         public void run() {
             mAdapter.cancelDiscovery();
             try {
@@ -313,7 +329,8 @@ public class BluetoothService {
                 setState(com.prog.tlc.btexchange.lmbluetoothsdk.base.State.STATE_LISTEN);
                 try {
                     mmSocket.close();
-                } catch (IOException e2) {}
+                } catch (IOException e2) {
+                }
                 BluetoothService.this.start();
                 return;
             }
@@ -322,11 +339,12 @@ public class BluetoothService {
             }
             connected(mmSocket);
         }
-        
+
         public void cancel() {
             try {
                 mmSocket.close();
-            } catch (IOException e) {}
+            } catch (IOException e) {
+            }
         }
     }
 
@@ -339,7 +357,7 @@ public class BluetoothService {
         private final BluetoothSocket mmSocket;
         private final InputStream mmInStream;
         private final OutputStream mmOutStream;
-        
+
         public ConnectedThread(BluetoothSocket socket) {
             mmSocket = socket;
             InputStream tmpIn = null;
@@ -347,22 +365,23 @@ public class BluetoothService {
             try {
                 tmpIn = socket.getInputStream();
                 tmpOut = socket.getOutputStream();
-            } catch (IOException e) {}
+            } catch (IOException e) {
+            }
             mmInStream = tmpIn;
             mmOutStream = tmpOut;
         }
-        
+
         public void run() {
             //byte[] buffer = new byte[1024];
-            Object buffer=new Object();
+            Object buffer = new Object();
             int bytes;
             while (true) {
                 try {
                     //bytes = mmInStream.read(buffer);
-                    ObjectInputStream ois=new ObjectInputStream(mmInStream);
-                    buffer=ois.readObject();
-                    if (mBluetoothListener != null){
-                        ((BluetoothListener)mBluetoothListener).onReadData(mmSocket.getRemoteDevice(), buffer);
+                    ObjectInputStream ois = new ObjectInputStream(mmInStream);
+                    buffer = ois.readObject();
+                    if (mBluetoothListener != null) {
+                        ((BluetoothListener) mBluetoothListener).onReadData(mmSocket.getRemoteDevice(), buffer);
                     }
                 } catch (IOException e) {
                     setState(com.prog.tlc.btexchange.lmbluetoothsdk.base.State.STATE_DISCONNECTED);
@@ -375,19 +394,25 @@ public class BluetoothService {
 
         /**
          * Write to the connected OutStream.
+         *
          * @param buffer The bytes to write
          */
-        public void write(Object buffer) {
+        public boolean write(Object buffer) {
             try {
-                ObjectOutputStream oos=new ObjectOutputStream(mmOutStream);
+                ObjectOutputStream oos = new ObjectOutputStream(mmOutStream);
                 oos.writeObject(buffer);
-            } catch (IOException e) {}
+                return true;
+            } catch (IOException e) {
+                return false;
+            }
+
         }
 
         public void cancel() {
             try {
                 mmSocket.close();
-            } catch (IOException e) {}
+            } catch (IOException e) {
+            }
         }
     }
 }

@@ -195,7 +195,7 @@ public abstract class Bluetooth {
      * Write data to remote device.
      * @param data the byte array represent the data
      */
-    public void write(Object data){}
+    public boolean write(Object data){return false;}
 
     /**
      * Get the connected remote device if connection is available, else return null

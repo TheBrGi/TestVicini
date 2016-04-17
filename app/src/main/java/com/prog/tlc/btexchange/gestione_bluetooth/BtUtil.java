@@ -63,11 +63,6 @@ public class BtUtil {
         }*/
     }
 
-    /*public static Context getContext() {
-        Application app = new Application();
-        return app.getApplicationContext();
-    }*/
-
     public static BluetoothAdapter getBtAdapter() {
         return BluetoothAdapter.getDefaultAdapter();
     }
@@ -108,6 +103,7 @@ public class BtUtil {
 
         bc.startAsServer();
         final String[] s = new String[1];
+        final boolean[] isNull = new boolean[1];//nel caso sia true interrompe ciclo bloccante
         bc.setBluetoothListener(new BluetoothListener() {
 
             @Override
@@ -140,25 +136,36 @@ public class BtUtil {
                 // Callback when remote device send data to current device.
                 //bc.disconnect();
                 s[0] = (String) data;
+                if (s[0] == null) {
+                    isNull[0] = true;
+                }
             }
         });
-        while (s[0] == null) {
+        while (s[0] == null && isNull[0] == false) {
         }
         bc.disconnect();
+        bc.release();
         return s[0];
     }
 
-    public static void mandaStringa(String s, String addr) {
-        BluetoothController bc = new BluetoothController();
-        bc.build(getContext());
-        enableBt();
-        bc.connect(addr);
-        while (!(bc.getConnectionState() == State.STATE_CONNECTED)) {
-        }
-        Log.d("stato connessione", String.valueOf(bc.getConnectionState()));
-        bc.write(s);
-        /*while (bc.getConnectionState() == State.STATE_CONNECTED) {
-        }*/
+    public static void mandaStringa(final String s, final String addr) {
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                Sender send = new Sender(addr, s);
+                send.start();
+                try {
+                    long attesaMax = 5000;
+                    send.join(attesaMax);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } finally {
+                    if (send.isAlive())
+                        send.interrupt();
+                }
+            }
+        };
+        new Thread(r).start();
     }
 
     public static void inviaGreeting(NeighborGreeting greet, Node vicino) {
@@ -186,5 +193,46 @@ public class BtUtil {
 
     public static String getMACMioDispositivo() {
         return BluetoothAdapter.getDefaultAdapter().getAddress();
+    }
+
+    private static class Sender extends Thread {
+        private String address;
+        private Object obj;
+        private BluetoothController bc = new BluetoothController();
+
+        public Sender(String address, Object obj) {
+            this.address = address;
+            this.obj = obj;
+        }
+
+        @Override
+        public void run() {
+            try {
+                bc.build(getContext());
+                enableBt();
+                bc.connect(address);
+                while (!(bc.getConnectionState() == com.prog.tlc.btexchange.lmbluetoothsdk.base.State.STATE_CONNECTED)) {
+                }
+                Log.d("stato connessione", String.valueOf(bc.getConnectionState()));
+                bc.write(obj);
+                while ((bc.getConnectionState() == com.prog.tlc.btexchange.lmbluetoothsdk.base.State.STATE_CONNECTED)) {
+                }
+                bc.disconnect();
+                bc.release();
+                bc=null;
+            } catch (NullPointerException e) {
+            }
+        }
+
+        @Override
+        public void interrupt() {
+            super.interrupt();
+            try {
+                bc.disconnect();
+                bc.release();
+                bc=null;
+            } catch (NullPointerException e) {
+            }
+        }
     }
 }
