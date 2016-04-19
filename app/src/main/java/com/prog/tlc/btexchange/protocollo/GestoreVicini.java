@@ -1,5 +1,7 @@
 package com.prog.tlc.btexchange.protocollo;
 
+import android.util.Log;
+
 import com.prog.tlc.btexchange.gestioneDispositivo.*;
 import com.prog.tlc.btexchange.gestione_bluetooth.BtUtil;
 
@@ -33,9 +35,11 @@ public class GestoreVicini extends Thread {
     public void run() { //invia greetings ai vicini (temporizzato)
         while (true) {
             vicini = BtUtil.cercaVicini();
+            Log.d("vicini cercati",vicini.toString());
             NeighborGreeting ng = new NeighborGreeting(myDisp.getMACAddress(), myDisp.getListaNodi());
             for (Node vicino : vicini) {
                 BtUtil.inviaGreeting(ng, vicino);
+                Log.d("grr inv",vicino.getNome());
             }
             try {
                 this.sleep(ATTESA);
@@ -48,7 +52,9 @@ public class GestoreVicini extends Thread {
     private class Ascoltatore extends Thread {
         public void run() {
             while (true) {
+                Log.d("attesa ricez","110");
                 List<Node> nuoveInfo = BtUtil.riceviGreeting().getNodiNoti();
+                Log.d("greet ricevuto","10");
                 mergeNodi(nuoveInfo); /*fondende gli elementi della lista
                                         myDisp insieme ai nodi della lista nuoveInfo*/
             }

@@ -23,18 +23,20 @@ import java.util.UUID;
  * Created by BrGi on 16/03/2016.
  */
 public class BtUtil {
-    public static final UUID myUUID = UUID.fromString("d7a628a4-e911-11e5-9ce9-5e5517507c66");
-    private final static long ATTESA = 10000;
-    public static final String GREETING = "greeting";
+    public static final UUID GREETINGS = UUID.fromString("91771218-057b-11e6-b512-3e1d05defe78");
+    public static final UUID REQ = UUID.fromString("987f7afa-057b-11e6-b512-3e1d05defe78");
+    public static final UUID REP = UUID.fromString("a39baba2-057b-11e6-b512-3e1d05defe78");
+    public static final UUID MESSAGE = UUID.fromString("aa407b04-057b-11e6-b512-3e1d05defe78");
+    public static final UUID RICERCA = UUID.fromString("352054a8-058e-11e6-b512-3e1d05defe78");
+    private static final long ATTESA = 3000;
     private static Context context;
-    private static BluetoothController bc = new BluetoothController();
+    public static BluetoothController sender = new BluetoothController();
 
     private BtUtil() {
     }
 
-    public static BluetoothController getBluetoothController() {
-        bc.build(getContext());
-        return bc;
+    public static String getMioNome() {
+        return getBtAdapter().getName();
     }
 
     public static void setContext(Context c) {
@@ -46,21 +48,15 @@ public class BtUtil {
     }
 
     public static void enableBt() {
+        BluetoothController bc = new BluetoothController();
+        bc.build(getContext());
         if (!bc.isEnabled()) {
             bc.openBluetooth();
             //bc.setDiscoverable(0);
             while (!bc.isEnabled()) {
             }
-
         }
-        /*Intent discoverableIntent = new
-                Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-        discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 0);
-        discoverableIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        getContext().startActivity(discoverableIntent);
-        BluetoothAdapter btAdapter=getBtAdapter();
-        while (!btAdapter.isEnabled()) {
-        }*/
+        bc.release();
     }
 
     public static BluetoothAdapter getBtAdapter() {
@@ -68,38 +64,61 @@ public class BtUtil {
     }
 
     public static LinkedList<Node> cercaVicini() {
-        final LinkedList<Node> lista = new LinkedList<>();
-        final BroadcastReceiver mReceiver = new BroadcastReceiver() {
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                // When discovery finds a device
-                if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-                    // Get the BluetoothDevice object from the Intent
-                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                    // Add the name and address to an array adapter to show in a ListView
-                    lista.add(new Node(device.getName(), device.getAddress()));
-                }
+        BluetoothController controllerRicerca = new BluetoothController();
+        controllerRicerca.build(getContext());
+        controllerRicerca.setAppUuid(BtUtil.RICERCA);
+        //BtUtil.enableBt();
+        controllerRicerca.startScan();
+        final LinkedList[] lista = new LinkedList[1];
+        lista[0] = new LinkedList<Node>();
+        controllerRicerca.setBluetoothListener(new BluetoothListener() {
+
+            @Override
+            public void onActionStateChanged(int preState, int state) {
+                // Callback when bluetooth power state changed.
             }
-        };
-        // Register the BroadcastReceiver
-        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-        Context context = getContext();
-        context.registerReceiver(mReceiver, filter); // Don't forget to unregister during onDestroy
-        getBtAdapter().startDiscovery();
+
+            @Override
+            public void onActionDiscoveryStateChanged(String discoveryState) {
+                // Callback when local Bluetooth adapter discovery process state changed.
+            }
+
+            @Override
+            public void onActionScanModeChanged(int preScanMode, int scanMode) {
+                // Callback when the current scan mode changed.
+            }
+
+            @Override
+            public void onBluetoothServiceStateChanged(int state) {
+                // Callback when the connection state changed.
+            }
+
+            @Override
+            public void onActionDeviceFound(BluetoothDevice device, short rssi) {
+                // Callback when found device.
+                Node nodo = new Node(device.getName(), device.getAddress());
+                lista[0].add(nodo);
+            }
+
+            @Override
+            public void onReadData(final BluetoothDevice device, final Object data) {
+                // Callback when remote device send data to current device.
+            }
+        });
         try {
             Thread.sleep(ATTESA);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        context.unregisterReceiver(mReceiver);
-        return lista;
+        controllerRicerca.cancelScan();
+        return lista[0];
     }
 
     public static String riceviStringa() {
         BluetoothController bc = new BluetoothController();
         bc.build(getContext());
 
-        enableBt();
+        //enableBt();
 
         bc.startAsServer();
         final String[] s = new String[1];
@@ -152,7 +171,7 @@ public class BtUtil {
         Runnable r = new Runnable() {
             @Override
             public void run() {
-                Sender send = new Sender(addr, s);
+                Sender send = new Sender(addr, s, MESSAGE);
                 send.start();
                 try {
                     long attesaMax = 5000;
@@ -168,27 +187,80 @@ public class BtUtil {
         new Thread(r).start();
     }
 
-    public static void inviaGreeting(NeighborGreeting greet, Node vicino) {
-        BluetoothAdapter btAdapter = getBtAdapter();
-        BluetoothDevice btDevice = btAdapter.getRemoteDevice(vicino.getMACAddress());
-        ConnectThread connect = new ConnectThread(btAdapter, btDevice, greet);
-        connect.start();
+    public static void inviaGreeting(final NeighborGreeting greet, final Node vicino) {
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                Sender send = new Sender(vicino.getMACAddress(), greet, GREETINGS);
+                send.start();
+                try {
+                    long attesaMax = 5000;
+                    send.join(attesaMax);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } finally {
+                    if (send.isAlive())
+                        send.interrupt();
+
+                }
+            }
+        };
+        new Thread(r).start();
     }
 
     public static NeighborGreeting riceviGreeting() {
-        BluetoothAdapter btAdapter = getBtAdapter();
-        Object obj = null;
-        NeighborGreeting ng = null;
-        while (true) {
-            AcceptThread accept = new AcceptThread(btAdapter, GREETING);
-            accept.start();
-            obj = accept.getAnswer();
-            if (obj instanceof NeighborGreeting) {
-                ng = (NeighborGreeting) obj;
-                break;
+        BluetoothController bc = new BluetoothController();
+        bc.build(getContext());
+        bc.setAppUuid(GREETINGS);
+        //enableBt();
+        Log.d("greeting server", "0000");
+        bc.startAsServer();
+        final NeighborGreeting[] gr = new NeighborGreeting[1];
+        final boolean[] isNull = new boolean[1];//nel caso sia true interrompe ciclo bloccante
+        bc.setBluetoothListener(new BluetoothListener() {
+
+            @Override
+            public void onActionStateChanged(int preState, int state) {
+                // Callback when bluetooth power state changed.
             }
+
+            @Override
+            public void onActionDiscoveryStateChanged(String discoveryState) {
+                // Callback when local Bluetooth adapter discovery process state changed.
+            }
+
+            @Override
+            public void onActionScanModeChanged(int preScanMode, int scanMode) {
+                // Callback when the current scan mode changed.
+            }
+
+            @Override
+            public void onBluetoothServiceStateChanged(int state) {
+                // Callback when the connection state changed.
+            }
+
+            @Override
+            public void onActionDeviceFound(BluetoothDevice device, short rssi) {
+                // Callback when found device.
+            }
+
+            @Override
+            public void onReadData(final BluetoothDevice device, final Object data) {
+                // Callback when remote device send data to current device.
+                Log.d("oggetto", data.toString());
+                gr[0] = (NeighborGreeting) data;
+                Log.d("greeting", gr[0].getMACOrigine());
+                if (gr[0] == null) {
+                    isNull[0] = true;
+                }
+            }
+        });
+        while (gr[0] == null && isNull[0] == false) {
+            //Log.d("greeting server","0000");
         }
-        return ng;
+        bc.disconnect();
+        bc.release();
+        return gr[0];
     }
 
     public static String getMACMioDispositivo() {
@@ -198,28 +270,33 @@ public class BtUtil {
     private static class Sender extends Thread {
         private String address;
         private Object obj;
-        private BluetoothController bc = new BluetoothController();
+        private BluetoothController sender;
 
-        public Sender(String address, Object obj) {
+        public Sender(String address, Object obj, UUID canale) {
+            sender = new BluetoothController();
             this.address = address;
             this.obj = obj;
+            sender.build(getContext());
+            sender.setAppUuid(canale);
         }
 
         @Override
         public void run() {
             try {
-                bc.build(getContext());
-                enableBt();
-                bc.connect(address);
-                while (!(bc.getConnectionState() == com.prog.tlc.btexchange.lmbluetoothsdk.base.State.STATE_CONNECTED)) {
+                Log.d("invio oggetto", obj.toString());
+                //enableBt();
+                sender.connect(address);
+                Log.d("indirizzo",address);
+                while (!(sender.getConnectionState() == com.prog.tlc.btexchange.lmbluetoothsdk.base.State.STATE_CONNECTED)) {
                 }
-                Log.d("stato connessione", String.valueOf(bc.getConnectionState()));
-                bc.write(obj);
-                while ((bc.getConnectionState() == com.prog.tlc.btexchange.lmbluetoothsdk.base.State.STATE_CONNECTED)) {
+                Log.d("stato connessione", String.valueOf(sender.getConnectionState()));
+                sender.write(obj);
+                while ((sender.getConnectionState() == com.prog.tlc.btexchange.lmbluetoothsdk.base.State.STATE_CONNECTED)) {
                 }
-                bc.disconnect();
-                bc.release();
-                bc=null;
+
+                sender.disconnect();
+                sender.release();
+                //bc = null;
             } catch (NullPointerException e) {
             }
         }
@@ -228,9 +305,10 @@ public class BtUtil {
         public void interrupt() {
             super.interrupt();
             try {
-                bc.disconnect();
-                bc.release();
-                bc=null;
+                sender.disconnect();
+                sender.release();
+                Log.d("isInterrupted", String.valueOf(isInterrupted()));
+                //bc = null;
             } catch (NullPointerException e) {
             }
         }

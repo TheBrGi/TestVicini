@@ -1,5 +1,7 @@
 package com.prog.tlc.btexchange.protocollo;
 
+import android.util.Log;
+
 import com.prog.tlc.btexchange.gestioneDispositivo.*;
 
 import java.util.List;
@@ -17,8 +19,8 @@ public class AODV {
         myDev = d;
         gestoreVicini = new GestoreVicini(d, tempoAttesaAggVicini);
         gestoreVicini.start();
-        new HandlerReq().start();
-        new HandlerReply().start();
+       // new HandlerReq().start();
+        //new HandlerReply().start();
     }
 
 
