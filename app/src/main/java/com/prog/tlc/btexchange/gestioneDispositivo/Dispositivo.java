@@ -22,8 +22,8 @@ public class Dispositivo {
 
     public Dispositivo(String n) {
         nome = n;
-        String MACAddress = BtUtil.getMACMioDispositivo();
-        int sequenceNumber = 1;
+        MACAddress = BtUtil.getMACMioDispositivo();
+        sequenceNumber = 1;
         listaNodi = Collections.synchronizedList(new LinkedList<Node>());
         listaNodi.add(new Node(n, MACAddress));
         tabellaDiRouting = new ConcurrentHashMap<>();

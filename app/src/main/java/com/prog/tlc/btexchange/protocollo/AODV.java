@@ -19,7 +19,7 @@ public class AODV {
         myDev = d;
         gestoreVicini = new GestoreVicini(d, tempoAttesaAggVicini);
         gestoreVicini.start();
-       // new HandlerReq().start();
+        //new HandlerReq().start();
         //new HandlerReply().start();
     }
 
