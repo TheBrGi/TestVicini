@@ -3,10 +3,14 @@ package com.prog.tlc.btexchange;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.IntentFilter;
+import android.net.Uri;
+import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
+import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
@@ -27,12 +31,22 @@ import android.widget.Toast;
 
 import com.prog.tlc.btexchange.gestioneDispositivo.Dispositivo;
 import com.prog.tlc.btexchange.gestioneDispositivo.Node;
+import com.prog.tlc.btexchange.gestioneWiFi.WiFiUtil;
 import com.prog.tlc.btexchange.gestione_bluetooth.BtUtil;
+import com.prog.tlc.btexchange.gestione_conn.ServerAsyncTask;
 import com.prog.tlc.btexchange.gestione_conn.WiFiDirectBroadcastReceiver;
 import com.prog.tlc.btexchange.lmbluetoothsdk.BluetoothController;
 import com.prog.tlc.btexchange.lmbluetoothsdk.base.BluetoothListener;
 import com.prog.tlc.btexchange.protocollo.AODV;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.Collection;
 import java.util.LinkedList;
 
@@ -49,7 +63,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             Collection<WifiP2pDevice> l = peers.getDeviceList();
             adapter.clear();
             for (WifiP2pDevice peer : l) {
-                adapter.add(peer.deviceName +"\n"+peer.deviceAddress);
+                adapter.add(peer.deviceName + "\n" + peer.deviceAddress);
             }
 
         }
@@ -89,7 +103,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
         mChannel = mManager.initialize(this, getMainLooper(), null);
         mReceiver = new WiFiDirectBroadcastReceiver(mManager, mChannel, this, myPeerListListener);
-
+        ServerAsyncTask server=new ServerAsyncTask(this);//start server CONTROLLA QUI
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
@@ -110,11 +124,59 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 String[] split = s.split("\n");
                 //Toast t = Toast.makeText(getApplicationContext(), s, Toast.LENGTH_SHORT);
                 //t.show();
-                String obj = "Ciao da ";
-
+                final String obj = "Ciao!";
+                final String address = split[1].trim();
+                Log.d("indirizzo", address);
+                //connetto su item della lista e mando ciao CONTROLLA QUI
+                connetti(address);
+                mManager.requestConnectionInfo(mChannel, new WifiP2pManager.ConnectionInfoListener() {
+                    @Override
+                    public void onConnectionInfoAvailable(WifiP2pInfo wifiP2pInfo) {
+                        final WifiP2pInfo info = wifiP2pInfo;
+                        Runnable r = new Runnable() {
+                            @Override
+                            public void run() {
+                                InetAddress address = info.groupOwnerAddress;
+                                Log.d("connetto su ",address.getHostName());
+                                //socket communication
+                                Socket socket = new Socket();
+                                try {
+                                    socket.bind(null);
+                                    socket.connect((new InetSocketAddress(address, 8000)), 500);
+                                    OutputStream outputStream = socket.getOutputStream();
+                                    Log.d("output creato","4502");
+                                    ObjectOutputStream oos = new ObjectOutputStream(outputStream);
+                                    oos.writeObject(obj);
+                                    Log.d("mex inviato","23685");
+                                    outputStream.close();
+                                    socket.close();
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        };
+                        new Thread(r).start();
+                    }
+                });
             }
         });
+        WiFiUtil util=new WiFiUtil(this);
+    }
 
+    private void connetti(String address) {//CONTROLLA QUI
+        WifiP2pConfig config = new WifiP2pConfig();
+        config.deviceAddress = address;
+        mManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+                //success logic
+            }
+
+            @Override
+            public void onFailure(int reason) {
+                //failure logic
+            }
+        });
     }
 
     private void stampaNodiAVideo() {
