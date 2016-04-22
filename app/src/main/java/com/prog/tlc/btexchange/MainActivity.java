@@ -68,6 +68,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         navigationView.setNavigationItemSelectedListener(this);
 
         BtUtil.enableBt();
+
+
         lv = (ListView) findViewById(R.id.listview);
         adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1);
         lv.setAdapter(adapter);
@@ -80,11 +82,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 //Toast t = Toast.makeText(getApplicationContext(), s, Toast.LENGTH_SHORT);
                 //t.show();
                 String obj = "Ciao da " + BtUtil.getBtAdapter().getName();
-                BtUtil.mandaStringa(obj, split[1]);
+                //BtUtil.mandaStringa(obj, split[1]);
 
             }
         });
-        Runnable r = new Runnable() {
+        /*Runnable r = new Runnable() {
             @Override
             public void run() {
                 while (true) {
@@ -100,7 +102,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 }
             }
         };
-        new Thread(r).start();
+        new Thread(r).start(); */
 
 
         mioDispositivo=new Dispositivo(BtUtil.getMioNome());

@@ -39,7 +39,6 @@ public class GestoreVicini extends Thread {
             NeighborGreeting ng = new NeighborGreeting(myDisp.getMACAddress(), myDisp.getListaNodi());
             for (Node vicino : vicini) {
                 BtUtil.inviaGreeting(ng, vicino);
-                Log.d("grr inv",vicino.getNome());
             }
             try {
                 this.sleep(ATTESA);
@@ -53,8 +52,13 @@ public class GestoreVicini extends Thread {
         public void run() {
             while (true) {
                 Log.d("attesa ricez","110");
-                List<Node> nuoveInfo = BtUtil.riceviGreeting().getNodiNoti();
-                Log.d("greet ricevuto","10");
+                NeighborGreeting ng = BtUtil.riceviGreeting();
+                if(ng==null) {
+                    Log.d("ng è null!!", "969");
+                    continue;
+                }
+                List<Node> nuoveInfo = ng.getNodiNoti();
+                Log.d("greet ricevuto", nuoveInfo.toString());
                 mergeNodi(nuoveInfo); /*fondende gli elementi della lista
                                         myDisp insieme ai nodi della lista nuoveInfo*/
             }

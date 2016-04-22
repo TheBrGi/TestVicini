@@ -1,21 +1,27 @@
 package com.prog.tlc.btexchange.gestione_bluetooth;
 
-import android.app.Application;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.content.BroadcastReceiver;
+import android.bluetooth.BluetoothServerSocket;
+import android.bluetooth.BluetoothSocket;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.prog.tlc.btexchange.gestioneDispositivo.Node;
 import com.prog.tlc.btexchange.lmbluetoothsdk.BluetoothController;
 import com.prog.tlc.btexchange.lmbluetoothsdk.base.BluetoothListener;
-import com.prog.tlc.btexchange.lmbluetoothsdk.base.State;
 import com.prog.tlc.btexchange.protocollo.NeighborGreeting;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.io.StreamCorruptedException;
 import java.util.LinkedList;
 import java.util.UUID;
 
@@ -61,6 +67,11 @@ public class BtUtil {
 
     public static BluetoothAdapter getBtAdapter() {
         return BluetoothAdapter.getDefaultAdapter();
+    }
+
+    public static String getMACMioDispositivo() {
+        String MAC = BluetoothAdapter.getDefaultAdapter().getAddress();
+        return MAC;
     }
 
     public static LinkedList<Node> cercaVicini() {
@@ -111,10 +122,11 @@ public class BtUtil {
             e.printStackTrace();
         }
         controllerRicerca.cancelScan();
+        controllerRicerca.release();
         return lista[0];
     }
 
-    public static String riceviStringa() {
+    /*public static String riceviStringa() {
         BluetoothController bc = new BluetoothController();
         bc.build(getContext());
 
@@ -165,9 +177,9 @@ public class BtUtil {
         bc.disconnect();
         bc.release();
         return s[0];
-    }
+    } */
 
-    public static void mandaStringa(final String s, final String addr) {
+    /*public static void mandaStringa(final String s, final String addr) {
         Runnable r = new Runnable() {
             @Override
             public void run() {
@@ -185,132 +197,60 @@ public class BtUtil {
             }
         };
         new Thread(r).start();
-    }
+    } */
 
-    public static void inviaGreeting(final NeighborGreeting greet, final Node vicino) {
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                Sender send = new Sender(vicino.getMACAddress(), greet, GREETINGS);
-                send.start();
-                try {
-                    long attesaMax = 5000;
-                    send.join(attesaMax);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } finally {
-                    if (send.isAlive())
-                        send.interrupt();
 
-                }
-            }
-        };
-        new Thread(r).start();
+        public static void inviaGreeting(NeighborGreeting greet, Node vicino) {
+        BluetoothAdapter ba = BluetoothAdapter.getDefaultAdapter();
+        BluetoothDevice bd = ba.getRemoteDevice(vicino.getMACAddress());
+        try {
+            BluetoothSocket bs = bd.createInsecureRfcommSocketToServiceRecord(GREETINGS);
+            bs.connect();
+            Log.d("CoNNNN",String.valueOf(bs.isConnected()));
+            ObjectOutputStream oos = new ObjectOutputStream(bs.getOutputStream());
+            oos.writeObject(greet);
+            Log.d("invio!!!!",greet.getNodiNoti().toString());
+            oos.flush();
+            bs.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public static NeighborGreeting riceviGreeting() {
-        BluetoothController bc = new BluetoothController();
-        bc.build(getContext());
-        bc.setAppUuid(GREETINGS);
-        //enableBt();
-        Log.d("greeting server", "0000");
-        bc.startAsServer();
-        final NeighborGreeting[] gr = new NeighborGreeting[1];
-        final boolean[] isNull = new boolean[1];//nel caso sia true interrompe ciclo bloccante
-        bc.setBluetoothListener(new BluetoothListener() {
-
-            @Override
-            public void onActionStateChanged(int preState, int state) {
-                // Callback when bluetooth power state changed.
-            }
-
-            @Override
-            public void onActionDiscoveryStateChanged(String discoveryState) {
-                // Callback when local Bluetooth adapter discovery process state changed.
-            }
-
-            @Override
-            public void onActionScanModeChanged(int preScanMode, int scanMode) {
-                // Callback when the current scan mode changed.
-            }
-
-            @Override
-            public void onBluetoothServiceStateChanged(int state) {
-                // Callback when the connection state changed.
-            }
-
-            @Override
-            public void onActionDeviceFound(BluetoothDevice device, short rssi) {
-                // Callback when found device.
-            }
-
-            @Override
-            public void onReadData(final BluetoothDevice device, final Object data) {
-                // Callback when remote device send data to current device.
-                Log.d("oggetto", data.toString());
-                gr[0] = (NeighborGreeting) data;
-                Log.d("greeting", gr[0].getMACOrigine());
-                if (gr[0] == null) {
-                    isNull[0] = true;
+        BluetoothAdapter ba = BluetoothAdapter.getDefaultAdapter();
+        try {
+            BluetoothServerSocket bss = ba.listenUsingInsecureRfcommWithServiceRecord("BtEx", GREETINGS);
+            BluetoothSocket bs = bss.accept();
+            Log.d("CONNESSIONE AVVE", String.valueOf(bs.isConnected()));
+            InputStream a = bs.getInputStream();
+            ObjectInputStream ois=null;
+            while(ois==null && bs.isConnected()) {
+                try {
+                    ois = new ObjectInputStream(a);
+                }catch (NullPointerException ne) {
+                    ne.printStackTrace();
                 }
             }
-        });
-        while (gr[0] == null && isNull[0] == false) {
-            //Log.d("greeting server","0000");
-        }
-        bc.disconnect();
-        bc.release();
-        return gr[0];
-    }
-
-    public static String getMACMioDispositivo() {
-        return BluetoothAdapter.getDefaultAdapter().getAddress();
-    }
-
-    private static class Sender extends Thread {
-        private String address;
-        private Object obj;
-        private BluetoothController sender;
-
-        public Sender(String address, Object obj, UUID canale) {
-            sender = new BluetoothController();
-            this.address = address;
-            this.obj = obj;
-            sender.build(getContext());
-            sender.setAppUuid(canale);
-        }
-
-        @Override
-        public void run() {
-            try {
-                Log.d("invio oggetto", obj.toString());
-                //enableBt();
-                sender.connect(address);
-                Log.d("indirizzo",address);
-                while (!(sender.getConnectionState() == com.prog.tlc.btexchange.lmbluetoothsdk.base.State.STATE_CONNECTED)) {
-                }
-                Log.d("stato connessione", String.valueOf(sender.getConnectionState()));
-                sender.write(obj);
-                while ((sender.getConnectionState() == com.prog.tlc.btexchange.lmbluetoothsdk.base.State.STATE_CONNECTED)) {
-                }
-
-                sender.disconnect();
-                sender.release();
-                //bc = null;
-            } catch (NullPointerException e) {
+            if(ois==null) {
+                bs.close();
+                bss.close();
+                Log.d("connessione caduta","5456");
+                return null;
             }
+            Object o = ois.readObject();
+            Log.d("Lett avv", String.valueOf(bs.isConnected()));
+            NeighborGreeting ng = (NeighborGreeting) o;
+            Log.d("Ogg ricevuto", "8878787");
+            bs.close();
+            bss.close();
+            return ng;
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
         }
-
-        @Override
-        public void interrupt() {
-            super.interrupt();
-            try {
-                sender.disconnect();
-                sender.release();
-                Log.d("isInterrupted", String.valueOf(isInterrupted()));
-                //bc = null;
-            } catch (NullPointerException e) {
-            }
-        }
+        return null;
     }
+
 }

@@ -8,7 +8,6 @@ import java.util.*;
  * Created by Domenico on 15/03/2016.
  */
 public class NeighborGreeting implements Serializable {
-    private static final long serialVersionUID = -4413982206404218851L;
     private String MACOrigine;
     private List<Node> nodiNoti;
 
