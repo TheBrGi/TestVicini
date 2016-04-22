@@ -30,7 +30,7 @@ public class BtUtil {
     public static final UUID RICERCA = UUID.fromString("352054a8-058e-11e6-b512-3e1d05defe78");
     private static final long ATTESA = 3000;
     private static Context context;
-    public static BluetoothController sender = new BluetoothController();
+    public static BluetoothController messContr = BluetoothController.getInstance();
 
     private BtUtil() {
     }
@@ -64,15 +64,10 @@ public class BtUtil {
     }
 
     public static LinkedList<Node> cercaVicini() {
-        BluetoothController controllerRicerca = new BluetoothController();
-        controllerRicerca.build(getContext());
-        controllerRicerca.setAppUuid(BtUtil.RICERCA);
         //BtUtil.enableBt();
-        controllerRicerca.startScan();
         final LinkedList[] lista = new LinkedList[1];
         lista[0] = new LinkedList<Node>();
-        controllerRicerca.setBluetoothListener(new BluetoothListener() {
-
+        messContr.setBluetoothListener(new BluetoothListener() {
             @Override
             public void onActionStateChanged(int preState, int state) {
                 // Callback when bluetooth power state changed.
@@ -105,26 +100,20 @@ public class BtUtil {
                 // Callback when remote device send data to current device.
             }
         });
+        messContr.startScan();
         try {
             Thread.sleep(ATTESA);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        controllerRicerca.cancelScan();
+        messContr.cancelScan();
         return lista[0];
     }
 
     public static String riceviStringa() {
-        BluetoothController bc = new BluetoothController();
-        bc.build(getContext());
-
-        //enableBt();
-
-        bc.startAsServer();
         final String[] s = new String[1];
         final boolean[] isNull = new boolean[1];//nel caso sia true interrompe ciclo bloccante
-        bc.setBluetoothListener(new BluetoothListener() {
-
+        messContr.setBluetoothListener(new BluetoothListener() {
             @Override
             public void onActionStateChanged(int preState, int state) {
                 // Callback when bluetooth power state changed.
@@ -160,10 +149,9 @@ public class BtUtil {
                 }
             }
         });
+        messContr.startAsServer();
         while (s[0] == null && isNull[0] == false) {
         }
-        bc.disconnect();
-        bc.release();
         return s[0];
     }
 
@@ -171,7 +159,7 @@ public class BtUtil {
         Runnable r = new Runnable() {
             @Override
             public void run() {
-                Sender send = new Sender(addr, s, MESSAGE);
+                Sender send = new Sender(addr, s, messContr);
                 send.start();
                 try {
                     long attesaMax = 5000;
@@ -191,7 +179,7 @@ public class BtUtil {
         Runnable r = new Runnable() {
             @Override
             public void run() {
-                Sender send = new Sender(vicino.getMACAddress(), greet, GREETINGS);
+                Sender send = new Sender(vicino.getMACAddress(), greet, messContr);
                 send.start();
                 try {
                     long attesaMax = 5000;
@@ -209,15 +197,12 @@ public class BtUtil {
     }
 
     public static NeighborGreeting riceviGreeting() {
-        BluetoothController bc = new BluetoothController();
-        bc.build(getContext());
-        bc.setAppUuid(GREETINGS);
+
         //enableBt();
         Log.d("greeting server", "0000");
-        bc.startAsServer();
         final NeighborGreeting[] gr = new NeighborGreeting[1];
         final boolean[] isNull = new boolean[1];//nel caso sia true interrompe ciclo bloccante
-        bc.setBluetoothListener(new BluetoothListener() {
+        messContr.setBluetoothListener(new BluetoothListener() {
 
             @Override
             public void onActionStateChanged(int preState, int state) {
@@ -255,11 +240,11 @@ public class BtUtil {
                 }
             }
         });
+        messContr.startAsServer();
         while (gr[0] == null && isNull[0] == false) {
             //Log.d("greeting server","0000");
         }
-        bc.disconnect();
-        bc.release();
+
         return gr[0];
     }
 
@@ -270,33 +255,27 @@ public class BtUtil {
     private static class Sender extends Thread {
         private String address;
         private Object obj;
-        private BluetoothController sender;
+        private BluetoothController controller;
 
-        public Sender(String address, Object obj, UUID canale) {
-            sender = new BluetoothController();
+        public Sender(String address, Object obj, BluetoothController controller) {
+            this.controller = controller;
             this.address = address;
             this.obj = obj;
-            sender.build(getContext());
-            sender.setAppUuid(canale);
         }
 
         @Override
         public void run() {
             try {
-                Log.d("invio oggetto", obj.toString());
-                //enableBt();
-                sender.connect(address);
-                Log.d("indirizzo",address);
-                while (!(sender.getConnectionState() == com.prog.tlc.btexchange.lmbluetoothsdk.base.State.STATE_CONNECTED)) {
+                controller.disconnect();
+                controller.connect(address);
+                while (!(controller.getConnectionState() == com.prog.tlc.btexchange.lmbluetoothsdk.base.State.STATE_CONNECTED)) {
                 }
-                Log.d("stato connessione", String.valueOf(sender.getConnectionState()));
-                sender.write(obj);
-                while ((sender.getConnectionState() == com.prog.tlc.btexchange.lmbluetoothsdk.base.State.STATE_CONNECTED)) {
+                Log.d("stato connessione", String.valueOf(controller.getConnectionState()));
+                controller.write(obj);
+                while ((controller.getConnectionState() == com.prog.tlc.btexchange.lmbluetoothsdk.base.State.STATE_CONNECTED)) {
                 }
 
-                sender.disconnect();
-                sender.release();
-                //bc = null;
+                controller.startAsServer();
             } catch (NullPointerException e) {
             }
         }
@@ -305,10 +284,7 @@ public class BtUtil {
         public void interrupt() {
             super.interrupt();
             try {
-                sender.disconnect();
-                sender.release();
-                Log.d("isInterrupted", String.valueOf(isInterrupted()));
-                //bc = null;
+                controller.startAsServer();
             } catch (NullPointerException e) {
             }
         }

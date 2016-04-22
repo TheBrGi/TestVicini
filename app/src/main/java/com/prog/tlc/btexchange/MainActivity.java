@@ -2,6 +2,12 @@ package com.prog.tlc.btexchange;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.IntentFilter;
+import android.net.wifi.p2p.WifiP2pDevice;
+import android.net.wifi.p2p.WifiP2pDeviceList;
+import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -22,6 +28,7 @@ import android.widget.Toast;
 import com.prog.tlc.btexchange.gestioneDispositivo.Dispositivo;
 import com.prog.tlc.btexchange.gestioneDispositivo.Node;
 import com.prog.tlc.btexchange.gestione_bluetooth.BtUtil;
+import com.prog.tlc.btexchange.gestione_conn.WiFiDirectBroadcastReceiver;
 import com.prog.tlc.btexchange.lmbluetoothsdk.BluetoothController;
 import com.prog.tlc.btexchange.lmbluetoothsdk.base.BluetoothListener;
 import com.prog.tlc.btexchange.protocollo.AODV;
@@ -32,15 +39,39 @@ import java.util.LinkedList;
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
     private ListView lv;
     private ArrayAdapter<String> adapter = null;
+    WifiP2pManager mManager;
+    WifiP2pManager.Channel mChannel;
+    BroadcastReceiver mReceiver;
+    IntentFilter mIntentFilter;
+    WifiP2pManager.PeerListListener myPeerListListener = new WifiP2pManager.PeerListListener() {
+        @Override
+        public void onPeersAvailable(WifiP2pDeviceList peers) {
+            Collection<WifiP2pDevice> l = peers.getDeviceList();
+            adapter.clear();
+            for (WifiP2pDevice peer : l) {
+                adapter.add(peer.deviceName +"\n"+peer.deviceAddress);
+            }
+
+        }
+    };
 
     private AODV protocollo;
     private Dispositivo mioDispositivo;
     private final long TEMPO_ATTESA_VICINI = 2000;
 
 
+    /* register the broadcast receiver with the intent values to be matched */
+    @Override
+    protected void onResume() {
+        super.onResume();
+        registerReceiver(mReceiver, mIntentFilter);
+    }
+
+    /* unregister the broadcast receiver */
     @Override
     protected void onPause() {
         super.onPause();
+        unregisterReceiver(mReceiver);
     }
 
     @Override
@@ -49,14 +80,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        //FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        //fab.setOnClickListener(new View.OnClickListener() {
-        //    public void onClick(View view) {
-        //        Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-        //                .setAction("Action", null).show();
-        //    }
-        //});
-        BtUtil.setContext(this.getApplicationContext());
+
+        mIntentFilter = new IntentFilter();
+        mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
+        mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
+        mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
+        mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
+        mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
+        mChannel = mManager.initialize(this, getMainLooper(), null);
+        mReceiver = new WiFiDirectBroadcastReceiver(mManager, mChannel, this, myPeerListListener);
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -67,7 +99,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        BtUtil.enableBt();
         lv = (ListView) findViewById(R.id.listview);
         adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1);
         lv.setAdapter(adapter);
@@ -79,32 +110,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 String[] split = s.split("\n");
                 //Toast t = Toast.makeText(getApplicationContext(), s, Toast.LENGTH_SHORT);
                 //t.show();
-                String obj = "Ciao da " + BtUtil.getBtAdapter().getName();
-                BtUtil.mandaStringa(obj, split[1]);
+                String obj = "Ciao da ";
 
             }
         });
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    final String data = BtUtil.riceviStringa();
-                    if (data == null) continue;
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast t = Toast.makeText(getApplicationContext(), data, Toast.LENGTH_SHORT);
-                            t.show();
-                        }
-                    });
-                }
-            }
-        };
-        new Thread(r).start();
-
-
-        mioDispositivo=new Dispositivo(BtUtil.getMioNome());
-        protocollo=new AODV(mioDispositivo,TEMPO_ATTESA_VICINI);
 
     }
 
@@ -137,31 +146,21 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
 
     public void scan(View v) {
-        Log.d("Inizio stamp","500");
-        //load();
-        stampaNodiAVideo();
+        Log.d("attivo WI-FI", "500");
+        load();
     }
 
     void load() {
-        /*if (mReceiver.isOrderedBroadcast()) unregisterReceiver(mReceiver);
-        btAdapter.cancelDiscovery();
-        adapter.clear();
-        // Register the BroadcastReceiver
-        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-        registerReceiver(mReceiver, filter); // Don't forget to unregister during onDestroy
-        btAdapter.startDiscovery();*/
-        //adapter.clear();
-        //bc.cancelScan();
-        //bc.startScan();
-    }
+        mManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+            }
 
-    /*@Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == BLUETOOTH_ON && resultCode == RESULT_OK) {
-            load();
-        }
-    }*/
+            @Override
+            public void onFailure(int reasonCode) {
+            }
+        });
+    }
 
     @Override
     public void onBackPressed() {
