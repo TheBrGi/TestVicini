@@ -1,6 +1,8 @@
 package com.prog.tlc.btexchange.gestioneWiFi;
 
 import android.app.Activity;
+import android.net.wifi.p2p.WifiP2pConfig;
+import android.net.wifi.p2p.WifiP2pManager;
 import android.util.Log;
 import android.widget.Toast;
 import com.prog.tlc.btexchange.gestioneDispositivo.Node;
@@ -15,6 +17,7 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.LinkedList;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 
@@ -24,6 +27,8 @@ public class WiFiUtil {
     private ConcurrentLinkedQueue<RouteReply> rreps = new ConcurrentLinkedQueue<>();
     private ConcurrentLinkedQueue<Object> messages = new ConcurrentLinkedQueue<>(); //concretizzare poi cosa inviare
     private ConcurrentLinkedQueue<NeighborGreeting> greetings = new ConcurrentLinkedQueue<>();
+    private ConcurrentHashMap dispConnessi = new ConcurrentHashMap();
+
 
     public WiFiUtil(Activity myActivity) {
         this.myActivity=myActivity;
@@ -66,6 +71,7 @@ public class WiFiUtil {
             }
         }
     }
+
 
     private class AscoltatoreGenerale extends Thread {
         public void run() {
@@ -133,4 +139,6 @@ public class WiFiUtil {
             }
         }
     }
+
+
 }
