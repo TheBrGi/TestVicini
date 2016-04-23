@@ -1,4 +1,4 @@
-package com.example.android.wifidirect;
+package com.prog.tlc.btexchange.gestioneWiFi;
 
 import java.io.BufferedReader;
 import java.io.FileReader;

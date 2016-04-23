@@ -3,22 +3,26 @@ package com.prog.tlc.btexchange.gestioneWiFi;
 import android.app.Activity;
 import android.util.Log;
 import android.widget.Toast;
-
 import com.prog.tlc.btexchange.gestioneDispositivo.Node;
 import com.prog.tlc.btexchange.protocollo.NeighborGreeting;
-
+import com.prog.tlc.btexchange.protocollo.RouteReply;
+import com.prog.tlc.btexchange.protocollo.RouteRequest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 
 public class WiFiUtil {
     private Activity myActivity;
+    private ConcurrentLinkedQueue<RouteRequest> rreqs = new ConcurrentLinkedQueue<>();
+    private ConcurrentLinkedQueue<RouteReply> rreps = new ConcurrentLinkedQueue<>();
+    private ConcurrentLinkedQueue<Object> messages = new ConcurrentLinkedQueue<>(); //concretizzare poi cosa inviare
     private ConcurrentLinkedQueue<NeighborGreeting> greetings = new ConcurrentLinkedQueue<>();
 
     public WiFiUtil(Activity myActivity) {
@@ -35,7 +39,18 @@ public class WiFiUtil {
     }
 
     public static void inviaGreeting(NeighborGreeting greet, Node vicino) {
-
+        //TODO connettersi al vicino in Utils
+        try {
+            Socket s = new Socket(Utils.getIPFromMac(vicino.getMACAddress()),8000); //la porta sarà la stessa in ogni disp
+            OutputStream os = s.getOutputStream();
+            ObjectOutputStream oos = new ObjectOutputStream(os);
+            oos.writeObject(greet);
+            oos.flush();
+            oos.close();
+            s.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public NeighborGreeting riceviGreeting() {
@@ -80,11 +95,25 @@ public class WiFiUtil {
                     InputStream inputstream = s.getInputStream();
                     ObjectInputStream ois = new ObjectInputStream(inputstream);
                     Log.d("stream ric","2000");
+                    /*Object ric = ois.readObject();
+                    if(ric instanceof NeighborGreeting) {
+                        greetings.add((NeighborGreeting) ric);
+                    }
+                    else if(ric instanceof RouteReply) {
+                        rreps.add((RouteReply) ric);
+                    }
+                    else if(ric instanceof RouteRequest) {
+                        rreqs.add((RouteRequest) ric);
+                    }
+                    else if(ric instanceof Object) {
+                        messages.add(ric);
+                    } */
                     String mex = (String) ois.readObject();
                     Log.d("mex ric",mex);
                     gestisciMess(mex);
                     ois.close();
                     s.close();
+
                 } catch (IOException e) {
                     e.printStackTrace();
                 } catch (ClassNotFoundException e) {
